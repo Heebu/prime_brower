@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'models/web_tab.dart';
 
-class WebViewPage extends StatefulWidget {
-  final String url;
+class WebViewPage extends StatelessWidget {
+  final WebTab tab;
 
-  WebViewPage({required Key key, required this.url}) : super(key: key);
+  const WebViewPage({Key? key, required this.tab}) : super(key: key);
 
-  @override
-  WebViewPageState createState() => WebViewPageState();
-}
-
-class WebViewPageState extends State<WebViewPage> {
   @override
   Widget build(BuildContext context) {
-    return WebView(
-      initialUrl: widget.url,
-      javascriptMode: JavascriptMode.unrestricted,
+    return Stack(
+      children: [
+        WebViewWidget(controller: tab.controller),
+        if (tab.isLoading && tab.progress < 100)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: LinearProgressIndicator(
+              value: tab.progress / 100.0,
+              minHeight: 3,
+              backgroundColor: Colors.transparent,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+            ),
+          ),
+      ],
     );
   }
 }

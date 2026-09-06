@@ -6,14 +6,18 @@ void main() {
 }
 
 class BrowserApp extends StatelessWidget {
+  const BrowserApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Browser App',
+      title: 'Prime Browser',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blue,
       ),
-      home: BrowserHomePage(),
+      home: const BrowserHomePage(),
     );
   }
 }

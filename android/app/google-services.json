@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "920487723086",
+    "project_id": "prime-news-media",
+    "storage_bucket": "prime-news-media.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:920487723086:android:1cf636962a6fe0ee26431f",
+        "android_client_info": {
+          "package_name": "com.example.primely_news"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgX3Sh-g7z5a3Ft2Xu02REsjccPz5pSGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:920487723086:android:979c68449f82687826431f",
+        "android_client_info": {
+          "package_name": "com.idris.prime_brower"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgX3Sh-g7z5a3Ft2Xu02REsjccPz5pSGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
