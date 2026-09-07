@@ -29,10 +29,13 @@ class _CopilotSheetState extends State<CopilotSheet> {
   @override
   void initState() {
     super.initState();
-    // Welcome message from Copilot
+    // Context-aware welcome message from Copilot
+    final hasContent = widget.pageContent.trim().isNotEmpty;
     _messages.add({
       'role': 'assistant',
-      'text': 'Hi! I\'m your **Prime Copilot**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?',
+      'text': hasContent
+          ? 'Hi! I\'m your **Prime Copilot**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?'
+          : 'Hi! I\'m your **Prime Copilot**. Ask me any question, or navigate to a web page and I can summarize or explain it for you!',
     });
   }
 

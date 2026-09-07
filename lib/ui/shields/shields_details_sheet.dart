@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/shields_service.dart';
-import '../../core/design_system/animated_pressable.dart';
 
 class ShieldsDetailsSheet extends StatelessWidget {
   final ShieldsService shieldsService;

@@ -92,9 +92,9 @@ class _ReaderModeScreenState extends State<ReaderModeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _themeChoiceChip(0, 'Light', Colors.white, Colors.black87),
-                            _themeChoiceChip(1, 'Sepia', const Color(0xFFFBF0D9), const Color(0xFF5F4B32)),
-                            _themeChoiceChip(2, 'Dark', const Color(0xFF1E1E1E), Colors.white),
+                            _themeChoiceChip(0, 'Light', Colors.white, Colors.black87, setModalState),
+                            _themeChoiceChip(1, 'Sepia', const Color(0xFFFBF0D9), const Color(0xFF5F4B32), setModalState),
+                            _themeChoiceChip(2, 'Dark', const Color(0xFF1E1E1E), Colors.white, setModalState),
                           ],
                         ),
                       ],
@@ -155,10 +155,13 @@ class _ReaderModeScreenState extends State<ReaderModeScreen> {
     );
   }
 
-  Widget _themeChoiceChip(int index, String label, Color bg, Color border) {
+  Widget _themeChoiceChip(int index, String label, Color bg, Color border, StateSetter setModalState) {
     final isSelected = _themeMode == index;
     return GestureDetector(
-      onTap: () => setState(() => _themeMode = index),
+      onTap: () {
+        setState(() => _themeMode = index);
+        setModalState(() {});
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

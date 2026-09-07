@@ -13,6 +13,7 @@ class BrowserManager with ChangeNotifier {
   final DownloadService downloadService;
   final FirebaseAuthService? authService;
   final FirebaseSyncService? syncService;
+  final void Function(String url)? onDownloadStarted;
 
   final List<WebTab> _normalTabs = [];
   final List<WebTab> _incognitoTabs = [];
@@ -28,6 +29,7 @@ class BrowserManager with ChangeNotifier {
     DownloadService? downloadService,
     this.authService,
     this.syncService,
+    this.onDownloadStarted,
   }) : downloadService = downloadService ?? DownloadService() {
     // Open default initial normal tab on start dashboard
     openNewTab('prime://newtab', incognito: false);
@@ -134,6 +136,10 @@ class BrowserManager with ChangeNotifier {
       onProgressChanged: (_) => notifyListeners(),
       onFrozenChanged: (_) => notifyListeners(),
       onNavigationRequestFilter: (url) => shieldsService.shouldAllowNavigation(url),
+      onDownloadRequested: (downloadUrl) {
+        downloadService.startDownload(downloadUrl);
+        onDownloadStarted?.call(downloadUrl);
+      },
       onPageFinishedCallback: (controller) {
         shieldsService.applyShields(controller);
       },

@@ -43,6 +43,18 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
       shieldsService: _shieldsService,
       authService: _authService,
       syncService: _syncService,
+      onDownloadStarted: (url) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Download started in background'),
+              action: SnackBarAction(label: 'View', onPressed: _openDownloads),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      },
     );
     _copilotService = AiCopilotService();
   }
@@ -60,8 +72,13 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
     final currentTab = _browserManager.currentTab;
     if (currentTab == null) return;
 
-    final article = await DevToolsService.extractArticleContent(currentTab.controller);
-    final content = article['content'] ?? '';
+    String content = '';
+    if (!currentTab.isNewTabPage) {
+      try {
+        final article = await DevToolsService.extractArticleContent(currentTab.controller);
+        content = article['content'] ?? '';
+      } catch (_) {}
+    }
 
     if (!mounted) return;
     showModalBottomSheet(
@@ -70,13 +87,20 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
       backgroundColor: Colors.transparent,
       builder: (_) => CopilotSheet(
         copilotService: _copilotService,
-        pageTitle: currentTab.title,
+        pageTitle: currentTab.isNewTabPage ? 'Prime Start' : currentTab.title,
         pageContent: content,
       ),
     );
   }
 
   void _openFindInPage() {
+    final currentTab = _browserManager.currentTab;
+    if (currentTab == null || currentTab.isNewTabPage) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Find in Page is available on web pages.')),
+      );
+      return;
+    }
     setState(() => _isFindInPageActive = true);
   }
 

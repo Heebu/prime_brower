@@ -51,21 +51,23 @@ class BrowserMenuSheet extends StatelessWidget {
                     IconButton(
                       icon: const Icon(Icons.arrow_back),
                       tooltip: 'Back',
-                      onPressed: currentTab == null
+                      onPressed: currentTab == null || currentTab.isNewTabPage
                           ? null
                           : () async {
+                              final nav = Navigator.of(context);
                               if (await currentTab.canGoBack()) await currentTab.goBack();
-                              Navigator.pop(context);
+                              if (context.mounted) nav.pop();
                             },
                     ),
                     IconButton(
                       icon: const Icon(Icons.arrow_forward),
                       tooltip: 'Forward',
-                      onPressed: currentTab == null
+                      onPressed: currentTab == null || currentTab.isNewTabPage
                           ? null
                           : () async {
+                              final nav = Navigator.of(context);
                               if (await currentTab.canGoForward()) await currentTab.goForward();
-                              Navigator.pop(context);
+                              if (context.mounted) nav.pop();
                             },
                     ),
                     IconButton(
@@ -74,22 +76,23 @@ class BrowserMenuSheet extends StatelessWidget {
                         color: isBookmarked ? Colors.amber : null,
                       ),
                       tooltip: isBookmarked ? 'Bookmarked' : 'Add Bookmark',
-                      onPressed: currentTab == null
+                      onPressed: currentTab == null || currentTab.isNewTabPage
                           ? null
                           : () {
+                              final messenger = ScaffoldMessenger.of(context);
+                              Navigator.pop(context);
                               if (!isBookmarked) {
                                 browserManager.addBookmark(currentTab.title, currentTab.url);
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(content: Text('Added to Bookmarks')),
                                 );
                               }
-                              Navigator.pop(context);
                             },
                     ),
                     IconButton(
                       icon: const Icon(Icons.refresh),
                       tooltip: 'Reload',
-                      onPressed: currentTab == null
+                      onPressed: currentTab == null || currentTab.isNewTabPage
                           ? null
                           : () {
                               currentTab.reload();
@@ -139,7 +142,7 @@ class BrowserMenuSheet extends StatelessWidget {
                   activeColor: Colors.deepOrangeAccent,
                   onChanged: (_) {
                     shieldsService.toggleShields();
-                    if (currentTab != null && shieldsService.shieldsEnabled) {
+                    if (currentTab != null && !currentTab.isNewTabPage && shieldsService.shieldsEnabled) {
                       shieldsService.applyShields(currentTab.controller);
                     }
                   },
@@ -183,19 +186,24 @@ class BrowserMenuSheet extends StatelessWidget {
                 subtitle: const Text('DOM tree, CSS editor, Network & Console logs'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(context);
-                  if (currentTab != null) {
-                    final success = await DevToolsService.injectEruda(currentTab.controller);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
+                  if (currentTab == null || currentTab.isNewTabPage) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Inspect Element is available on web pages.')),
+                    );
+                    return;
+                  }
+                  final success = await DevToolsService.injectEruda(currentTab.controller);
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
                             ? 'Eruda Mobile DevTools launched! Look for the gear icon on screen.'
                             : 'Could not inject DevTools into this page.',
-                        ),
                       ),
-                    );
-                  }
+                    ),
+                  );
                 },
               ),
 
@@ -205,16 +213,21 @@ class BrowserMenuSheet extends StatelessWidget {
                 title: const Text('View Page Source'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final nav = Navigator.of(context);
                   Navigator.pop(context);
-                  if (currentTab != null) {
-                    final html = await DevToolsService.getPageSource(currentTab.controller);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SourceViewerScreen(html: html, url: currentTab.url),
-                      ),
+                  if (currentTab == null || currentTab.isNewTabPage) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Page source is available on web pages.')),
                     );
+                    return;
                   }
+                  final html = await DevToolsService.getPageSource(currentTab.controller);
+                  nav.push(
+                    MaterialPageRoute(
+                      builder: (_) => SourceViewerScreen(html: html, url: currentTab.url),
+                    ),
+                  );
                 },
               ),
 
@@ -224,13 +237,18 @@ class BrowserMenuSheet extends StatelessWidget {
                 title: const Text('JavaScript Console'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
+                  final messenger = ScaffoldMessenger.of(context);
                   Navigator.pop(context);
-                  if (currentTab != null) {
-                    showDialog(
-                      context: context,
-                      builder: (_) => JsConsoleDialog(controller: currentTab.controller),
+                  if (currentTab == null || currentTab.isNewTabPage) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('JavaScript Console is available on web pages.')),
                     );
+                    return;
                   }
+                  showDialog(
+                    context: context,
+                    builder: (_) => JsConsoleDialog(controller: currentTab.controller),
+                  );
                 },
               ),
 
@@ -242,20 +260,25 @@ class BrowserMenuSheet extends StatelessWidget {
                 title: const Text('Immersive Reader Mode (Edge)'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final nav = Navigator.of(context);
                   Navigator.pop(context);
-                  if (currentTab != null) {
-                    final article = await DevToolsService.extractArticleContent(currentTab.controller);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ReaderModeScreen(
-                          title: article['title'] ?? currentTab.title,
-                          content: article['content'] ?? '',
-                          url: currentTab.url,
-                        ),
-                      ),
+                  if (currentTab == null || currentTab.isNewTabPage) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Reader Mode is available on web articles.')),
                     );
+                    return;
                   }
+                  final article = await DevToolsService.extractArticleContent(currentTab.controller);
+                  nav.push(
+                    MaterialPageRoute(
+                      builder: (_) => ReaderModeScreen(
+                        title: article['title'] ?? currentTab.title,
+                        content: article['content'] ?? '',
+                        url: currentTab.url,
+                      ),
+                    ),
+                  );
                 },
               ),
 
@@ -265,9 +288,9 @@ class BrowserMenuSheet extends StatelessWidget {
                 title: const Text('Bookmarks & Collections'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
+                  final nav = Navigator.of(context);
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
+                  nav.push(
                     MaterialPageRoute(
                       builder: (_) => BookmarksScreen(browserManager: browserManager),
                     ),

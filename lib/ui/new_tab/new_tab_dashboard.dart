@@ -6,6 +6,7 @@ import '../../services/shields_service.dart';
 import '../../core/design_system/app_colors.dart';
 import '../../core/design_system/animated_pressable.dart';
 import '../../core/design_system/responsive_layout.dart';
+import '../shields/shields_details_sheet.dart';
 
 class NewTabDashboard extends StatefulWidget {
   final BrowserManager browserManager;
@@ -141,12 +142,15 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final isIncognito = widget.browserManager.isIncognito;
-    final blockedCount = widget.shieldsService.blockedElementsCount;
-    final dataSavedMb = (blockedCount * 0.165).toStringAsFixed(1);
-    final timeSavedSec = (blockedCount * 0.45).toStringAsFixed(1);
+    return AnimatedBuilder(
+      animation: Listenable.merge([widget.browserManager, widget.shieldsService]),
+      builder: (context, _) {
+        final isIncognito = widget.browserManager.isIncognito;
+        final blockedCount = widget.shieldsService.blockedElementsCount;
+        final dataSavedMb = (blockedCount * 0.165).toStringAsFixed(1);
+        final timeSavedSec = (blockedCount * 0.45).toStringAsFixed(1);
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: isIncognito ? const Color(0xFF121212) : const Color(0xFFF8F9FD),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -330,102 +334,117 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Brave Shields Privacy Metrics Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.deepOrangeAccent.withOpacity(0.2),
-                    width: 1,
+              // Brave Shields Privacy Metrics Card (Tappable to view detailed shield logs & whitelist)
+              AnimatedPressable(
+                scaleFactor: 0.98,
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => ShieldsDetailsSheet(
+                      shieldsService: widget.shieldsService,
+                      currentUrl: 'prime://newtab',
+                      onReload: () {},
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.deepOrangeAccent.withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.deepOrangeAccent.withOpacity(0.05),
+                        blurRadius: 12,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.deepOrangeAccent.withOpacity(0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.deepOrangeAccent.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepOrangeAccent.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.shield_rounded,
+                                  color: Colors.deepOrangeAccent,
+                                  size: 20,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.shield_rounded,
-                                color: Colors.deepOrangeAccent,
-                                size: 20,
+                              const SizedBox(width: 10),
+                              Text(
+                                'Prime Shields (Brave Privacy)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: isIncognito ? Colors.white : Colors.black87,
+                                ),
                               ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: widget.shieldsService.shieldsEnabled
+                                  ? Colors.green.withOpacity(0.12)
+                                  : Colors.grey.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Prime Shields (Brave Privacy)',
+                            child: Text(
+                              widget.shieldsService.shieldsEnabled ? 'ACTIVE' : 'OFF',
                               style: TextStyle(
+                                fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: isIncognito ? Colors.white : Colors.black87,
+                                color: widget.shieldsService.shieldsEnabled ? Colors.green : Colors.grey,
                               ),
                             ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: widget.shieldsService.shieldsEnabled
-                                ? Colors.green.withOpacity(0.12)
-                                : Colors.grey.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            widget.shieldsService.shieldsEnabled ? 'ACTIVE' : 'OFF',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: widget.shieldsService.shieldsEnabled ? Colors.green : Colors.grey,
-                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _buildShieldStat(
+                            label: 'Trackers Blocked',
+                            value: '$blockedCount',
+                            icon: Icons.block_rounded,
+                            color: Colors.deepOrangeAccent,
+                            isIncognito: isIncognito,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        _buildShieldStat(
-                          label: 'Trackers Blocked',
-                          value: '$blockedCount',
-                          icon: Icons.block_rounded,
-                          color: Colors.deepOrangeAccent,
-                          isIncognito: isIncognito,
-                        ),
-                        _buildShieldStat(
-                          label: 'Est. Data Saved',
-                          value: '${dataSavedMb}MB',
-                          icon: Icons.data_saver_on_rounded,
-                          color: Colors.blueAccent,
-                          isIncognito: isIncognito,
-                        ),
-                        _buildShieldStat(
-                          label: 'Time Saved',
-                          value: '${timeSavedSec}s',
-                          icon: Icons.timer_outlined,
-                          color: Colors.teal,
-                          isIncognito: isIncognito,
-                        ),
-                      ],
-                    ),
-                  ],
+                          _buildShieldStat(
+                            label: 'Est. Data Saved',
+                            value: '${dataSavedMb}MB',
+                            icon: Icons.data_saver_on_rounded,
+                            color: Colors.blueAccent,
+                            isIncognito: isIncognito,
+                          ),
+                          _buildShieldStat(
+                            label: 'Time Saved',
+                            value: '${timeSavedSec}s',
+                            icon: Icons.timer_outlined,
+                            color: Colors.teal,
+                            isIncognito: isIncognito,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 28),
@@ -629,6 +648,8 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
         ),
       ),
     );
+  },
+);
   }
 
   Widget _buildShieldStat({

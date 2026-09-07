@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:prime_brower/main.dart';
 import 'package:prime_brower/models/download_item.dart';
 import 'package:prime_brower/models/speed_dial_item.dart';
-import 'package:prime_brower/models/web_tab.dart';
 import 'package:prime_brower/services/adblock_filter_service.dart';
 import 'package:prime_brower/services/browser_manager.dart';
 import 'package:prime_brower/services/download_service.dart';

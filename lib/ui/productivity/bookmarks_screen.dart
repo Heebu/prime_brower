@@ -9,29 +9,34 @@ class BookmarksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bookmarks = browserManager.bookmarks;
+    return AnimatedBuilder(
+      animation: browserManager,
+      builder: (context, _) {
+        final bookmarks = browserManager.bookmarks;
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Bookmarks & Collections'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(icon: Icon(Icons.bookmark_outline), text: 'Bookmarks'),
-              Tab(icon: Icon(Icons.collections_bookmark_outlined), text: 'Collections'),
-            ],
+        return DefaultTabController(
+          length: 2,
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Bookmarks & Collections'),
+              bottom: const TabBar(
+                tabs: [
+                  Tab(icon: Icon(Icons.bookmark_outline), text: 'Bookmarks'),
+                  Tab(icon: Icon(Icons.collections_bookmark_outlined), text: 'Collections'),
+                ],
+              ),
+            ),
+            body: TabBarView(
+              children: [
+                // Bookmarks tab
+                _buildBookmarksList(context, bookmarks.where((b) => !b.isCollection).toList()),
+                // Collections tab
+                _buildCollectionsList(context, bookmarks.where((b) => b.isCollection).toList()),
+              ],
+            ),
           ),
-        ),
-        body: TabBarView(
-          children: [
-            // Bookmarks tab
-            _buildBookmarksList(context, bookmarks.where((b) => !b.isCollection).toList()),
-            // Collections tab
-            _buildCollectionsList(context, bookmarks.where((b) => b.isCollection).toList()),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 

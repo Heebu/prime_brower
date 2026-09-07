@@ -18,6 +18,7 @@ class WebTab {
   WebViewController? _controller;
   final void Function(WebViewController controller)? onPageFinishedCallback;
   final bool Function(String url)? onNavigationRequestFilter;
+  final void Function(String url)? onDownloadRequested;
 
   // Callbacks for notifying state listeners
   final void Function(String url)? onUrlChanged;
@@ -44,6 +45,7 @@ class WebTab {
     this.onFrozenChanged,
     this.onPageFinishedCallback,
     this.onNavigationRequestFilter,
+    this.onDownloadRequested,
   }) : lastActiveTime = lastActiveTime ?? DateTime.now() {
     if (url.isNotEmpty && url != 'prime://newtab' && !isFrozen) {
       final initialUri = Uri.tryParse(url);
@@ -80,6 +82,18 @@ class WebTab {
                   return NavigationDecision.prevent;
                 }
               }
+
+              // Intercept file downloads to prevent WebView crash
+              final isDownloadable = RegExp(
+                r'\.(pdf|apk|zip|rar|7z|tar|gz|mp3|wav|mp4|mkv|docx|xlsx|pptx)(\?.*)?$',
+                caseSensitive: false,
+              ).hasMatch(request.url);
+
+              if (isDownloadable && onDownloadRequested != null) {
+                onDownloadRequested!(request.url);
+                return NavigationDecision.prevent;
+              }
+
               return NavigationDecision.navigate;
             },
             onProgress: (int p) {
