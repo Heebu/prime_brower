@@ -50,6 +50,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "920487723086-fisis4tdoqidm1u943vuv90s40phooo6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.idris.prime_brower",
+            "certificate_hash": "d14cb6eb27b7bf2956516a9a2befa6990ef27f9c"
+          }
+        },
+        {
           "client_id": "920487723086-fhjvu8frsr4ic6ium57b24g9h6e04v5r.apps.googleusercontent.com",
           "client_type": 3
         }
