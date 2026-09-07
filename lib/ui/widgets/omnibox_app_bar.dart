@@ -360,14 +360,6 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                     tooltip: 'Prime Cloud Sync',
                     onPressed: widget.onOpenSync,
                   ),
-                  IconButton(
-                    icon: Icon(
-                      tab != null && tab.isLoading ? Icons.close : Icons.refresh,
-                      size: 20,
-                    ),
-                    tooltip: tab != null && tab.isLoading ? 'Stop' : 'Reload',
-                    onPressed: tab == null ? null : () => tab.reload(),
-                  ),
                 ],
         ),
       ),
