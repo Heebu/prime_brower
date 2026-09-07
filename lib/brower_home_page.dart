@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'models/web_tab.dart';
 import 'services/browser_manager.dart';
@@ -7,6 +8,7 @@ import 'services/devtools_service.dart';
 import 'services/firebase_auth_service.dart';
 import 'services/firebase_sync_service.dart';
 import 'services/theme_service.dart';
+import 'services/notification_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
 import 'ui/widgets/omnibox_suggestions_overlay.dart';
@@ -26,13 +28,14 @@ class BrowserHomePage extends StatefulWidget {
   State<BrowserHomePage> createState() => _BrowserHomePageState();
 }
 
-class _BrowserHomePageState extends State<BrowserHomePage> {
+class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingObserver {
   late final ShieldsService _shieldsService;
   late final FirebaseAuthService _authService;
   late final FirebaseSyncService _syncService;
   late final BrowserManager _browserManager;
   late final AiCopilotService _copilotService;
   bool _isFindInPageActive = false;
+  StreamSubscription<NotificationActionPayload>? _notificationSubscription;
 
   late final TextEditingController _omniboxController;
   late final FocusNode _omniboxFocusNode;
@@ -68,10 +71,33 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
     final isNewTab = tab == null || tab.url == 'prime://newtab';
     _omniboxController = TextEditingController(text: isNewTab ? '' : tab.url);
     _omniboxFocusNode = FocusNode();
+
+    // Register lifecycle observer for background page load monitoring
+    WidgetsBinding.instance.addObserver(this);
+
+    // Listen to notification clicks/actions
+    _notificationSubscription = NotificationService.instance.onNotificationAction.listen((action) {
+      if (!mounted) return;
+      if (action.url != null && action.url!.isNotEmpty) {
+        _browserManager.openNewTab(action.url!);
+      } else if (action.type == NotificationType.download) {
+        _openDownloads();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final isBackground = state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden;
+    _browserManager.setAppInBackground(isBackground);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notificationSubscription?.cancel();
     _omniboxController.dispose();
     _omniboxFocusNode.dispose();
     super.dispose();

@@ -8,6 +8,7 @@ import '../devtools/source_viewer_screen.dart';
 import '../devtools/js_console_dialog.dart';
 import '../productivity/reader_mode_screen.dart';
 import '../productivity/bookmarks_screen.dart';
+import 'notification_settings_sheet.dart';
 
 class BrowserMenuSheet extends StatelessWidget {
   final BrowserManager browserManager;
@@ -445,6 +446,23 @@ class BrowserMenuSheet extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   onOpenDownloads();
+                },
+              ),
+
+              // Notifications & Alerts Manager
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined, color: Colors.amber),
+                title: const Text('Notifications & Alerts'),
+                subtitle: const Text('Adverts, news feeds, downloads & page loads'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => const NotificationSettingsSheet(),
+                  );
                 },
               ),
 

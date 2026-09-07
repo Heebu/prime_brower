@@ -8,6 +8,7 @@ import 'firebase_sync_service.dart';
 
 import 'download_service.dart';
 import 'feed_ad_service.dart';
+import 'notification_service.dart';
 
 class BrowserManager with ChangeNotifier {
   final ShieldsService shieldsService;
@@ -97,6 +98,26 @@ class BrowserManager with ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isAppInBackground = false;
+  bool get isAppInBackground => _isAppInBackground;
+
+  void setAppInBackground(bool inBackground) {
+    _isAppInBackground = inBackground;
+  }
+
+  void notifyPageFinished(WebTab tab, [dynamic controller]) {
+    if (controller != null) {
+      shieldsService.applyShields(controller);
+    }
+    if (_isAppInBackground && !tab.isNewTabPage) {
+      NotificationService.instance.showBackgroundPageLoadedNotification(
+        tabId: tab.id,
+        title: tab.title,
+        url: tab.url,
+      );
+    }
+  }
+
   // Getters
   bool get isIncognito => _isIncognito;
   List<WebTab> get normalTabs => List.unmodifiable(_normalTabs);
@@ -164,7 +185,7 @@ class BrowserManager with ChangeNotifier {
         onDownloadStarted?.call(downloadUrl);
       },
       onPageFinishedCallback: (controller) {
-        shieldsService.applyShields(controller);
+        notifyPageFinished(tab, controller);
       },
     );
 

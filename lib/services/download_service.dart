@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/download_item.dart';
+import 'notification_service.dart';
 
 class DownloadService with ChangeNotifier {
   static final DownloadService _instance = DownloadService._internal();
@@ -118,6 +119,12 @@ class DownloadService with ChangeNotifier {
             }
             notifyListeners();
             client.close();
+
+            NotificationService.instance.showDownloadCompleteNotification(
+              fileName: item.fileName,
+              filePath: item.filePath,
+              bytes: item.downloadedBytes,
+            );
           },
           onError: (dynamic error) async {
             await sink.close();

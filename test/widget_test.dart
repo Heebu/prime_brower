@@ -21,6 +21,8 @@ import 'package:prime_brower/services/theme_service.dart';
 import 'package:prime_brower/services/feed_ad_service.dart';
 import 'package:prime_brower/ui/new_tab/new_tab_dashboard.dart';
 import 'package:prime_brower/ui/copilot/copilot_sheet.dart';
+import 'package:prime_brower/services/notification_service.dart';
+import 'package:prime_brower/ui/widgets/notification_settings_sheet.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -633,6 +635,177 @@ void main() {
     await tester.tap(find.text('System'));
     await tester.pumpAndSettle();
     expect(ThemeService.instance.currentMode, AppThemeMode.system);
+  });
+
+  test('NotificationService tests: news, advert, download, background page alerts & toggles', () async {
+    final service = NotificationService.instance;
+
+    expect(service.newsEnabled, true);
+    expect(service.advertsEnabled, true);
+    expect(service.downloadsEnabled, true);
+    expect(service.backgroundPageLoadsEnabled, true);
+
+    // 1. News Notification
+    await service.showNewsNotification(
+      title: 'Tech Breakthrough',
+      body: 'Quantum computing update',
+      url: 'https://news.ycombinator.com',
+    );
+    expect(service.recentNotifications.isNotEmpty, true);
+    final newsAlert = service.recentNotifications.first;
+    expect(newsAlert.type, NotificationType.news);
+    expect(newsAlert.title, 'Tech Breakthrough');
+    expect(newsAlert.url, 'https://news.ycombinator.com');
+
+    // 2. Advert Notification
+    await service.showAdvertNotification(
+      title: 'Summer Sale',
+      body: '30% off everything',
+      targetUrl: 'https://store.example.com',
+    );
+    final adAlert = service.recentNotifications.first;
+    expect(adAlert.type, NotificationType.advert);
+    expect(adAlert.title, 'Summer Sale');
+    expect(adAlert.url, 'https://store.example.com');
+
+    // 3. Download Complete Notification
+    await service.showDownloadCompleteNotification(
+      fileName: 'report.pdf',
+      filePath: '/storage/report.pdf',
+      bytes: 2097152,
+    );
+    final downloadAlert = service.recentNotifications.first;
+    expect(downloadAlert.type, NotificationType.download);
+    expect(downloadAlert.title, 'Download Complete');
+    expect(downloadAlert.filePath, '/storage/report.pdf');
+
+    // 4. Background Page Load Notification
+    await service.showBackgroundPageLoadedNotification(
+      tabId: 'tab_99',
+      title: 'Dart Documentation',
+      url: 'https://dart.dev',
+    );
+    final pageAlert = service.recentNotifications.first;
+    expect(pageAlert.type, NotificationType.backgroundPage);
+    expect(pageAlert.title, 'Dart Documentation');
+    expect(pageAlert.tabId, 'tab_99');
+
+    // Test toggles
+    service.toggleNewsNotifications();
+    expect(service.newsEnabled, false);
+    service.toggleNewsNotifications();
+    expect(service.newsEnabled, true);
+
+    service.toggleAdvertNotifications();
+    expect(service.advertsEnabled, false);
+    service.toggleAdvertNotifications();
+    expect(service.advertsEnabled, true);
+  });
+
+  test('BrowserManager background page load notification trigger test', () {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    expect(manager.isAppInBackground, false);
+    manager.setAppInBackground(true);
+    expect(manager.isAppInBackground, true);
+
+    // Open tab with web url
+    manager.openNewTab('https://flutter.dev');
+    final tab = manager.currentTab;
+    expect(tab, isNotNull);
+    expect(tab!.isNewTabPage, false);
+
+    final beforeCount = NotificationService.instance.recentNotifications.length;
+
+    // Simulate page finish when app is in background
+    manager.notifyPageFinished(tab);
+
+    final afterCount = NotificationService.instance.recentNotifications.length;
+    expect(afterCount, beforeCount + 1);
+    expect(NotificationService.instance.recentNotifications.first.type, NotificationType.backgroundPage);
+    expect(NotificationService.instance.recentNotifications.first.url, 'https://flutter.dev');
+
+    // App back in foreground
+    manager.setAppInBackground(false);
+    expect(manager.isAppInBackground, false);
+  });
+
+  testWidgets('NotificationSettingsSheet smoke & interaction test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: NotificationSettingsSheet(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Title & Subtitle
+    expect(find.text('Notifications & Alerts'), findsOneWidget);
+    expect(find.text('FCM push alerts & background notifications'), findsOneWidget);
+
+    // Verify Preferences List
+    expect(find.text('News & Breaking Stories'), findsOneWidget);
+    expect(find.text('Promotions & Adverts'), findsOneWidget);
+    expect(find.text('Download Complete Alerts'), findsOneWidget);
+    expect(find.text('Background Page Ready Alerts'), findsOneWidget);
+
+    // Verify Test Action Chips
+    expect(find.text('Test News Alert'), findsOneWidget);
+    expect(find.text('Test Advert Alert'), findsOneWidget);
+    expect(find.text('Test Download Alert'), findsOneWidget);
+    expect(find.text('Test Background Load'), findsOneWidget);
+
+    // Tap Test News Alert
+    await tester.ensureVisible(find.text('Test News Alert'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Test News Alert'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sent News Alert notification'), findsOneWidget);
+    expect(NotificationService.instance.recentNotifications.first.type, NotificationType.news);
+
+    // Tap Test Advert Alert
+    await tester.ensureVisible(find.text('Test Advert Alert'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Test Advert Alert'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sent Advert Alert notification'), findsOneWidget);
+    expect(NotificationService.instance.recentNotifications.first.type, NotificationType.advert);
+  });
+
+  testWidgets('BrowserMenuSheet notifications tile navigation test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserMenuSheet(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenDownloads: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Notifications & Alerts tile is in menu
+    expect(find.text('Notifications & Alerts'), findsOneWidget);
+    expect(find.text('Adverts, news feeds, downloads & page loads'), findsOneWidget);
+
+    // Scroll to it if needed and tap
+    await tester.ensureVisible(find.text('Notifications & Alerts'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Notifications & Alerts'));
+    await tester.pumpAndSettle();
+
+    // Verify NotificationSettingsSheet modal is opened
+    expect(find.byType(NotificationSettingsSheet), findsOneWidget);
   });
 }
 
