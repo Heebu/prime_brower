@@ -48,6 +48,8 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
 
   double _verticalDragDistance = 0.0;
   double _horizontalDragDistance = 0.0;
+  bool _isProgrammaticUpdate = false;
+  String _lastDispatchedQuery = '';
 
   TextEditingController get _effectiveController => widget.controller ?? _internalController!;
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode!;
@@ -68,23 +70,49 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
     _effectiveController.addListener(_handleTextChange);
   }
 
+  void _setControllerTextSilently(String text) {
+    if (_effectiveController.text == text) return;
+    _isProgrammaticUpdate = true;
+    _effectiveController.text = text;
+    _isProgrammaticUpdate = false;
+  }
+
   void _handleFocusChange() {
+    if (!_effectiveFocusNode.hasFocus) {
+      _lastDispatchedQuery = '';
+    }
     widget.onFocusChanged?.call(_effectiveFocusNode.hasFocus);
-    setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _handleTextChange() {
-    widget.onQueryChanged?.call(_effectiveController.text);
+    if (_isProgrammaticUpdate) return;
+    // Only dispatch query change notifications when user is actively focused on the omnibox
+    if (!_effectiveFocusNode.hasFocus) return;
+    final text = _effectiveController.text;
+    if (_lastDispatchedQuery == text) return;
+    _lastDispatchedQuery = text;
+    widget.onQueryChanged?.call(text);
   }
 
   @override
   void didUpdateWidget(covariant OmniboxAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      (oldWidget.controller ?? _internalController)?.removeListener(_handleTextChange);
+      (widget.controller ?? _internalController)?.addListener(_handleTextChange);
+    }
+    if (oldWidget.focusNode != widget.focusNode) {
+      (oldWidget.focusNode ?? _internalFocusNode)?.removeListener(_handleFocusChange);
+      (widget.focusNode ?? _internalFocusNode)?.addListener(_handleFocusChange);
+    }
     if (!_effectiveFocusNode.hasFocus) {
       final tab = widget.browserManager.currentTab;
       final expected = (tab == null || tab.url == 'prime://newtab') ? '' : tab.url;
       if (_effectiveController.text != expected) {
-        _effectiveController.text = expected;
+        _setControllerTextSilently(expected);
       }
     }
   }
@@ -211,7 +239,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                     _effectiveFocusNode.unfocus();
                     final tab = widget.browserManager.currentTab;
                     final expected = (tab == null || tab.url == 'prime://newtab') ? '' : tab.url;
-                    _effectiveController.text = expected;
+                    _setControllerTextSilently(expected);
                   },
                 )
               : null,

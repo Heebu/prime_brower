@@ -1219,6 +1219,85 @@ void main() {
 
     expect(manager.currentTabIndex, 0);
   });
+
+  testWidgets('OmniboxAppBar programmatic URL update does not trigger setState during build', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+    final controller = TextEditingController(text: '');
+    final focusNode = FocusNode();
+    bool setStateCalledDuringBuild = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return Scaffold(
+              appBar: OmniboxAppBar(
+                browserManager: manager,
+                shieldsService: shields,
+                controller: controller,
+                focusNode: focusNode,
+                onQueryChanged: (query) {
+                  // If triggered during build/didUpdateWidget, this will throw or flag
+                  setState(() {
+                    setStateCalledDuringBuild = true;
+                  });
+                },
+                onOpenMenu: () {},
+                onOpenCopilot: () {},
+                onFindInPage: () {},
+                onOpenSync: () {},
+                onOpenTabs: () {},
+              ),
+              body: const Center(child: Text('Content')),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Now update the tab's URL (similar to page load completing to scholarshipregion.com)
+    final currentTab = manager.currentTab;
+    expect(currentTab, isNotNull);
+    currentTab!.url = 'https://www.scholarshipregion.com/';
+
+    // Trigger rebuild of the parent widget to invoke didUpdateWidget on OmniboxAppBar
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return Scaffold(
+              appBar: OmniboxAppBar(
+                browserManager: manager,
+                shieldsService: shields,
+                controller: controller,
+                focusNode: focusNode,
+                onQueryChanged: (query) {
+                  setState(() {
+                    setStateCalledDuringBuild = true;
+                  });
+                },
+                onOpenMenu: () {},
+                onOpenCopilot: () {},
+                onFindInPage: () {},
+                onOpenSync: () {},
+                onOpenTabs: () {},
+              ),
+              body: const Center(child: Text('Content')),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The omnibox controller should reflect the updated URL
+    expect(controller.text, 'https://www.scholarshipregion.com/');
+    // Crucially, onQueryChanged should NOT have triggered setState during build
+    expect(setStateCalledDuringBuild, false);
+  });
 }
+
 
 

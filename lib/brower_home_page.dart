@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'services/browser_manager.dart';
 import 'services/shields_service.dart';
 import 'services/ai_copilot_service.dart';
@@ -232,19 +233,41 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
               focusNode: _omniboxFocusNode,
               onOpenTabs: _openTabGrid,
               onFocusChanged: (focused) {
-                setState(() {
-                  _isOmniboxFocused = focused;
-                  if (!focused) {
-                    final tab = _browserManager.currentTab;
-                    final isNewTab = tab == null || tab.url == 'prime://newtab';
-                    _omniboxController.text = isNewTab ? '' : tab.url;
-                  }
-                });
+                void applyFocus() {
+                  if (!mounted) return;
+                  setState(() {
+                    _isOmniboxFocused = focused;
+                    if (!focused) {
+                      final tab = _browserManager.currentTab;
+                      final isNewTab = tab == null || tab.url == 'prime://newtab';
+                      _omniboxController.text = isNewTab ? '' : tab.url;
+                      _omniboxQuery = '';
+                    } else {
+                      _omniboxQuery = _omniboxController.text;
+                    }
+                  });
+                }
+
+                if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => applyFocus());
+                } else {
+                  applyFocus();
+                }
               },
               onQueryChanged: (query) {
-                setState(() {
-                  _omniboxQuery = query;
-                });
+                if (_omniboxQuery == query) return;
+                void applyQuery() {
+                  if (!mounted || _omniboxQuery == query) return;
+                  setState(() {
+                    _omniboxQuery = query;
+                  });
+                }
+
+                if (WidgetsBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) => applyQuery());
+                } else {
+                  applyQuery();
+                }
               },
               onOpenMenu: _openMenuSheet,
               onOpenCopilot: _openCopilot,
