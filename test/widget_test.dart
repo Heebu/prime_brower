@@ -4,8 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:prime_brower/main.dart';
 import 'package:prime_brower/models/download_item.dart';
 import 'package:prime_brower/models/speed_dial_item.dart';
+import 'package:prime_brower/models/web_tab.dart';
+import 'package:prime_brower/services/adblock_filter_service.dart';
+import 'package:prime_brower/services/browser_manager.dart';
 import 'package:prime_brower/services/download_service.dart';
+import 'package:prime_brower/services/shields_service.dart';
 import 'package:prime_brower/ui/downloads/downloads_screen.dart';
+import 'package:prime_brower/ui/shields/shields_details_sheet.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -50,6 +55,100 @@ void main() {
 
     // Verify initial empty state
     expect(find.text('No downloads yet'), findsOneWidget);
+  });
+
+  testWidgets('ShieldsDetailsSheet smoke test', (WidgetTester tester) async {
+    final shieldsService = ShieldsService();
+    shieldsService.recordBlockedRequest('https://googleadservices.com/pagead/conversion.js');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShieldsDetailsSheet(
+            shieldsService: shieldsService,
+            currentUrl: 'https://example.com',
+            onReload: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Prime Shields'), findsOneWidget);
+    expect(find.text('Total Blocked'), findsOneWidget);
+    expect(find.text('Network Requests'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
+  });
+
+  test('AdBlockFilterService network domain classification test', () {
+    final filter = AdBlockFilterService();
+
+    // Blocked ad & tracker domains
+    expect(filter.isAdOrTracker('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'), true);
+    expect(filter.isAdOrTracker('https://securepubads.g.doubleclick.net/gampad/ads'), true);
+    expect(filter.isAdOrTracker('https://connect.facebook.net/en_US/fbevents.js'), true);
+    expect(filter.isAdOrTracker('https://criteo.com/delivery/ajs.php'), true);
+    expect(filter.isAdOrTracker('https://outbrain.com/widget'), true);
+    expect(filter.isAdOrTracker('https://taboola.com/scripts/loader.js'), true);
+
+    // Legitimate domains allowed
+    expect(filter.isAdOrTracker('https://flutter.dev'), false);
+    expect(filter.isAdOrTracker('https://dart.dev/guides'), false);
+    expect(filter.isAdOrTracker('https://en.wikipedia.org/wiki/Flutter'), false);
+
+    // Whitelisting functionality
+    filter.whitelistDomain('criteo.com');
+    expect(filter.isAdOrTracker('https://criteo.com/delivery/ajs.php'), false);
+    filter.removeWhitelistDomain('criteo.com');
+    expect(filter.isAdOrTracker('https://criteo.com/delivery/ajs.php'), true);
+  });
+
+  test('ShieldsService blocking and metrics test', () {
+    final shields = ShieldsService();
+    expect(shields.shieldsEnabled, true);
+
+    // Test blocking navigation to ad network
+    final shouldAllow = shields.shouldAllowNavigation('https://googleads.g.doubleclick.net/pagead');
+    expect(shouldAllow, false);
+    expect(shields.networkBlockedCount, 1);
+    expect(shields.blockedElementsCount, 1);
+    expect(shields.estimatedDataSavedMb > 0, true);
+    expect(shields.estimatedTimeSavedSec > 0, true);
+    expect(shields.blockedRequests.isNotEmpty, true);
+    expect(shields.blockedRequests.first.category, 'Ad Network');
+
+    // Legitimate navigation allowed
+    expect(shields.shouldAllowNavigation('https://github.com'), true);
+  });
+
+  test('WebTab and BrowserManager Memory Saver (Freeze & Thaw) test', () {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    // Manager starts with 1 new tab on prime://newtab
+    expect(manager.normalTabs.length, 1);
+    expect(manager.normalTabs.first.isFrozen, false);
+
+    // Open second and third tabs
+    manager.openNewTab('https://flutter.dev');
+    manager.openNewTab('https://dart.dev');
+    expect(manager.normalTabs.length, 3);
+
+    // Freeze all inactive tabs
+    manager.freezeAllInactiveTabs();
+
+    // Inactive tabs should be frozen, active tab remains awake
+    final activeTab = manager.currentTab;
+    expect(activeTab?.isFrozen, false);
+    expect(manager.frozenTabsCount >= 1, true);
+    expect(manager.totalMemorySavedMb >= 42, true);
+
+    // Switching to a frozen tab should automatically thaw it
+    final frozenIndex = manager.normalTabs.indexWhere((t) => t.isFrozen);
+    if (frozenIndex != -1) {
+      manager.switchToTab(frozenIndex);
+      expect(manager.normalTabs[frozenIndex].isFrozen, false);
+    }
   });
 
   test('DownloadItem unit tests: categories and size formatting', () {

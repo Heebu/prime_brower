@@ -49,6 +49,39 @@ class BrowserManager with ChangeNotifier {
     });
   }
 
+  // Memory Saver (Chrome / Brave Tab Hibernation)
+  bool _memorySaverEnabled = true;
+  bool get memorySaverEnabled => _memorySaverEnabled;
+  int get frozenTabsCount => currentTabs.where((t) => t.isFrozen).length;
+  int get totalMemorySavedMb => currentTabs.where((t) => t.isFrozen).fold<int>(0, (sum, t) => sum + t.estimatedMemorySavedMb);
+
+  void toggleMemorySaver() {
+    _memorySaverEnabled = !_memorySaverEnabled;
+    if (!_memorySaverEnabled) {
+      // Thaw all tabs
+      for (final t in _normalTabs) {
+        t.thaw();
+      }
+      for (final t in _incognitoTabs) {
+        t.thaw();
+      }
+    }
+    notifyListeners();
+  }
+
+  void freezeAllInactiveTabs({bool? incognito}) {
+    final targetIncognito = incognito ?? _isIncognito;
+    final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
+    final activeIdx = targetIncognito ? _incognitoTabIndex : _normalTabIndex;
+
+    for (int i = 0; i < targetList.length; i++) {
+      if (i != activeIdx && !targetList[i].isNewTabPage) {
+        targetList[i].freeze();
+      }
+    }
+    notifyListeners();
+  }
+
   // Getters
   bool get isIncognito => _isIncognito;
   List<WebTab> get normalTabs => List.unmodifiable(_normalTabs);
@@ -99,10 +132,23 @@ class BrowserManager with ChangeNotifier {
       onTitleChanged: (_) => notifyListeners(),
       onLoadingChanged: (_) => notifyListeners(),
       onProgressChanged: (_) => notifyListeners(),
+      onFrozenChanged: (_) => notifyListeners(),
+      onNavigationRequestFilter: (url) => shieldsService.shouldAllowNavigation(url),
       onPageFinishedCallback: (controller) {
         shieldsService.applyShields(controller);
       },
     );
+
+    final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
+
+    // If Memory Saver is enabled, hibernate older background tabs
+    if (_memorySaverEnabled && targetList.length >= 2) {
+      for (final oldTab in targetList) {
+        if (!oldTab.isNewTabPage) {
+          oldTab.freeze();
+        }
+      }
+    }
 
     if (targetIncognito) {
       _incognitoTabs.add(tab);
@@ -166,6 +212,13 @@ class BrowserManager with ChangeNotifier {
       } else {
         _normalTabIndex = index;
       }
+
+      // Wake up the selected tab if it was hibernating
+      final selected = targetList[index];
+      if (selected.isFrozen) {
+        selected.thaw();
+      }
+
       notifyListeners();
     }
   }

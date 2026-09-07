@@ -11,6 +11,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback onOpenCopilot;
   final VoidCallback onFindInPage;
   final VoidCallback onOpenSync;
+  final VoidCallback? onOpenShieldsDetails;
 
   const OmniboxAppBar({
     Key? key,
@@ -20,6 +21,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onOpenCopilot,
     required this.onFindInPage,
     required this.onOpenSync,
+    this.onOpenShieldsDetails,
   }) : super(key: key);
 
   @override
@@ -183,7 +185,13 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
               )
             else if (widget.shieldsService.shieldsEnabled)
               GestureDetector(
-                onTap: _showSecurityInfo,
+                onTap: () {
+                  if (widget.onOpenShieldsDetails != null) {
+                    widget.onOpenShieldsDetails!();
+                  } else {
+                    _showSecurityInfo();
+                  }
+                },
                 child: Container(
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

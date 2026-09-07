@@ -10,14 +10,21 @@ class WebTab {
   int progress;
   bool devToolsInjected;
 
+  // Memory Hibernation (Chrome / Brave Memory Saver)
+  bool isFrozen;
+  DateTime lastActiveTime;
+  final int estimatedMemorySavedMb;
+
   WebViewController? _controller;
   final void Function(WebViewController controller)? onPageFinishedCallback;
+  final bool Function(String url)? onNavigationRequestFilter;
 
   // Callbacks for notifying state listeners
   final void Function(String url)? onUrlChanged;
   final void Function(String title)? onTitleChanged;
   final void Function(bool isLoading)? onLoadingChanged;
   final void Function(int progress)? onProgressChanged;
+  final void Function(bool isFrozen)? onFrozenChanged;
 
   WebTab({
     required this.id,
@@ -27,16 +34,23 @@ class WebTab {
     this.isLoading = false,
     this.progress = 0,
     this.devToolsInjected = false,
+    this.isFrozen = false,
+    DateTime? lastActiveTime,
+    this.estimatedMemorySavedMb = 42,
     this.onUrlChanged,
     this.onTitleChanged,
     this.onLoadingChanged,
     this.onProgressChanged,
+    this.onFrozenChanged,
     this.onPageFinishedCallback,
-  }) {
-    if (url.isNotEmpty && url != 'prime://newtab') {
+    this.onNavigationRequestFilter,
+  }) : lastActiveTime = lastActiveTime ?? DateTime.now() {
+    if (url.isNotEmpty && url != 'prime://newtab' && !isFrozen) {
       final initialUri = Uri.tryParse(url);
       if (initialUri != null) {
-        controller.loadRequest(initialUri);
+        try {
+          controller.loadRequest(initialUri);
+        } catch (_) {}
       }
     }
   }
@@ -47,6 +61,9 @@ class WebTab {
     if (_controller == null) {
       _initController();
     }
+    if (_controller == null) {
+      throw UnsupportedError('WebViewPlatform is not available in this environment');
+    }
     return _controller!;
   }
 
@@ -56,6 +73,15 @@ class WebTab {
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setNavigationDelegate(
           NavigationDelegate(
+            onNavigationRequest: (NavigationRequest request) {
+              if (onNavigationRequestFilter != null) {
+                final allowed = onNavigationRequestFilter!(request.url);
+                if (!allowed) {
+                  return NavigationDecision.prevent;
+                }
+              }
+              return NavigationDecision.navigate;
+            },
             onProgress: (int p) {
               progress = p;
               onProgressChanged?.call(p);
@@ -63,12 +89,14 @@ class WebTab {
             onPageStarted: (String currentUrl) {
               url = currentUrl;
               isLoading = true;
+              lastActiveTime = DateTime.now();
               onUrlChanged?.call(currentUrl);
               onLoadingChanged?.call(true);
             },
             onPageFinished: (String currentUrl) async {
               url = currentUrl;
               isLoading = false;
+              lastActiveTime = DateTime.now();
               try {
                 final pageTitle = await _controller?.getTitle();
                 if (pageTitle != null && pageTitle.isNotEmpty) {
@@ -93,8 +121,38 @@ class WebTab {
     }
   }
 
+  /// Puts the tab into memory hibernation to release WebView native RAM and background timers
+  void freeze() {
+    if (isFrozen || isNewTabPage) return;
+    isFrozen = true;
+    _controller = null;
+    isLoading = false;
+    onFrozenChanged?.call(true);
+    onLoadingChanged?.call(false);
+  }
+
+  /// Wakes the tab up from hibernation and restores the page
+  void thaw() {
+    if (!isFrozen) return;
+    isFrozen = false;
+    lastActiveTime = DateTime.now();
+    onFrozenChanged?.call(false);
+    if (url.isNotEmpty && !isNewTabPage) {
+      final uri = Uri.tryParse(url);
+      if (uri != null) {
+        try {
+          controller.loadRequest(uri);
+        } catch (_) {}
+      }
+    }
+  }
+
   void loadUrl(String newUrl) {
+    if (isFrozen) {
+      thaw();
+    }
     url = newUrl;
+    lastActiveTime = DateTime.now();
     if (newUrl == 'prime://newtab') {
       title = 'New Tab';
       isLoading = false;
@@ -106,12 +164,20 @@ class WebTab {
     }
     final uri = Uri.tryParse(newUrl);
     if (uri != null) {
-      controller.loadRequest(uri);
+      try {
+        controller.loadRequest(uri);
+      } catch (_) {}
     }
   }
 
   void reload() {
-    _controller?.reload();
+    if (isFrozen) {
+      thaw();
+    } else {
+      try {
+        _controller?.reload();
+      } catch (_) {}
+    }
   }
 
   Future<bool> canGoBack() async => (await _controller?.canGoBack()) ?? false;

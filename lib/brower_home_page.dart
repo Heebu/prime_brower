@@ -15,6 +15,7 @@ import 'ui/copilot/copilot_sheet.dart';
 import 'ui/productivity/find_in_page_bar.dart';
 import 'ui/sync/cloud_sync_sheet.dart';
 import 'ui/downloads/downloads_screen.dart';
+import 'ui/shields/shields_details_sheet.dart';
 import 'core/design_system/responsive_layout.dart';
 
 class BrowserHomePage extends StatefulWidget {
@@ -101,6 +102,20 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
     );
   }
 
+  void _openShieldsDetails() {
+    final currentTab = _browserManager.currentTab;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ShieldsDetailsSheet(
+        shieldsService: _shieldsService,
+        currentUrl: currentTab?.url ?? '',
+        onReload: () => currentTab?.reload(),
+      ),
+    );
+  }
+
   void _openMenuSheet() {
     showModalBottomSheet(
       context: context,
@@ -113,6 +128,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
         onFindInPage: _openFindInPage,
         onOpenSync: _openSyncSheet,
         onOpenDownloads: _openDownloads,
+        onOpenShieldsDetails: _openShieldsDetails,
       ),
     );
   }
@@ -136,6 +152,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
             onOpenCopilot: _openCopilot,
             onFindInPage: _openFindInPage,
             onOpenSync: _openSyncSheet,
+            onOpenShieldsDetails: _openShieldsDetails,
           ),
           body: Column(
             children: [

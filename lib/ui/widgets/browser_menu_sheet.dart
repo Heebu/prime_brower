@@ -14,6 +14,7 @@ class BrowserMenuSheet extends StatelessWidget {
   final VoidCallback onFindInPage;
   final VoidCallback onOpenSync;
   final VoidCallback onOpenDownloads;
+  final VoidCallback? onOpenShieldsDetails;
 
   const BrowserMenuSheet({
     Key? key,
@@ -23,6 +24,7 @@ class BrowserMenuSheet extends StatelessWidget {
     required this.onFindInPage,
     required this.onOpenSync,
     required this.onOpenDownloads,
+    this.onOpenShieldsDetails,
   }) : super(key: key);
 
   @override
@@ -142,6 +144,12 @@ class BrowserMenuSheet extends StatelessWidget {
                     }
                   },
                 ),
+                onTap: onOpenShieldsDetails != null
+                    ? () {
+                        Navigator.pop(context);
+                        onOpenShieldsDetails!();
+                      }
+                    : null,
               ),
 
               // Edge Copilot AI Assistant
