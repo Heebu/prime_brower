@@ -451,6 +451,57 @@ void main() {
     // Verify down panel (BottomAppBar) is cleared out
     expect(find.byType(BottomAppBar), findsNothing);
   });
+
+  testWidgets('TabGridScreen slide and swipe to close tab test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    // Open a second and third tab
+    manager.openNewTab('https://flutter.dev');
+    manager.openNewTab('https://dart.dev');
+    expect(manager.normalTabs.length, 3);
+
+    // Pin the first tab
+    manager.togglePinTab(0);
+    expect(manager.normalTabs[0].isPinned, isTrue);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TabGridScreen(browserManager: manager),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Dismissible widgets are present for all 3 tabs
+    expect(find.byType(Dismissible), findsNWidgets(3));
+
+    // Attempt to swipe the pinned tab (first tab) -> should NOT be closed
+    final pinnedDismissible = find.byType(Dismissible).first;
+    await tester.drag(pinnedDismissible, const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    // Verify tab is still present and warning SnackBar was displayed
+    expect(manager.normalTabs.length, 3);
+    expect(find.text('This tab is pinned! Unpin it first to close.'), findsOneWidget);
+
+    // Swipe right (positive X offset) on unpinned tab to close it
+    final unpinnedDismissible = find.byType(Dismissible).at(1);
+    await tester.drag(unpinnedDismissible, const Offset(500, 0));
+    await tester.pumpAndSettle();
+
+    // Verify one tab was closed
+    expect(manager.normalTabs.length, 2);
+    expect(find.text('Undo'), findsOneWidget);
+
+    // Tap Undo
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    // Tab should be restored
+    expect(manager.normalTabs.length, 3);
+  });
 }
 
 

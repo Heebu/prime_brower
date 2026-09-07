@@ -132,13 +132,15 @@ class BrowserManager with ChangeNotifier {
     return 'https://www.google.com/search?q=${Uri.encodeComponent(trimmed)}';
   }
 
+  static int _tabCounter = 0;
+
   void openNewTab(String url, {bool? incognito}) {
     final targetIncognito = incognito ?? _isIncognito;
     final targetUrl = sanitizeInput(url);
 
     late final WebTab tab;
     tab = WebTab(
-      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      id: '${DateTime.now().microsecondsSinceEpoch}_${++_tabCounter}',
       url: targetUrl,
       isIncognito: targetIncognito,
       onUrlChanged: (newUrl) {
@@ -209,6 +211,15 @@ class BrowserManager with ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  void closeTabById(String tabId, {bool? incognito}) {
+    final targetIncognito = incognito ?? _isIncognito;
+    final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
+    final index = targetList.indexWhere((t) => t.id == tabId);
+    if (index != -1) {
+      closeTab(index, incognito: targetIncognito);
+    }
   }
 
   void closeAllTabs({bool? incognito}) {

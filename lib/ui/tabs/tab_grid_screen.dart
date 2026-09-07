@@ -455,13 +455,19 @@ class _TabGridScreenState extends State<TabGridScreen> {
                 itemCount: tabsInGroup.length,
                 itemBuilder: (context, idx) {
                   final entry = tabsInGroup[idx];
-                  return _buildTabCard(
+                  return _wrapWithDismissible(
                     context: context,
                     tab: entry.value,
                     originalIndex: entry.key,
-                    isSelected: entry.key == activeIndex,
-                    isDark: isDark,
                     manager: manager,
+                    child: _buildTabCard(
+                      context: context,
+                      tab: entry.value,
+                      originalIndex: entry.key,
+                      isSelected: entry.key == activeIndex,
+                      isDark: isDark,
+                      manager: manager,
+                    ),
                   );
                 },
               ),
@@ -469,6 +475,86 @@ class _TabGridScreenState extends State<TabGridScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDismissBackground({required bool isStart}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.redAccent.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      alignment: isStart ? Alignment.centerLeft : Alignment.centerRight,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+          SizedBox(height: 4),
+          Text(
+            'Close',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _wrapWithDismissible({
+    required BuildContext context,
+    required WebTab tab,
+    required int originalIndex,
+    required BrowserManager manager,
+    required Widget child,
+  }) {
+    return Dismissible(
+      key: ValueKey('tab_dismiss_${tab.id}'),
+      direction: DismissDirection.horizontal,
+      background: _buildDismissBackground(isStart: true),
+      secondaryBackground: _buildDismissBackground(isStart: false),
+      confirmDismiss: (direction) async {
+        if (tab.isPinned) {
+          HapticFeedback.heavyImpact();
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('This tab is pinned! Unpin it first to close.'),
+              action: SnackBarAction(
+                label: 'Unpin',
+                onPressed: () {
+                  manager.togglePinTab(originalIndex, incognito: _showingIncognito);
+                },
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return false;
+        }
+        return true;
+      },
+      onDismissed: (direction) {
+        HapticFeedback.mediumImpact();
+        manager.closeTabById(tab.id, incognito: _showingIncognito);
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Closed "${tab.title.isNotEmpty ? tab.title : 'Tab'}"'),
+            action: SnackBarAction(
+              label: 'Undo',
+              onPressed: () {
+                manager.openNewTab(tab.url, incognito: _showingIncognito);
+              },
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: child,
     );
   }
 
@@ -490,42 +576,50 @@ class _TabGridScreenState extends State<TabGridScreen> {
       manager: manager,
     );
 
-    if (!canReorder) return card;
+    final itemWidget = canReorder
+        ? DragTarget<int>(
+            onWillAcceptWithDetails: (details) => details.data != originalIndex,
+            onAcceptWithDetails: (details) {
+              manager.reorderTab(details.data, originalIndex, incognito: _showingIncognito);
+              HapticFeedback.mediumImpact();
+            },
+            builder: (context, candidateData, rejectedData) {
+              final isHovered = candidateData.isNotEmpty;
+              return LongPressDraggable<int>(
+                data: originalIndex,
+                feedback: Material(
+                  elevation: 10,
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
+                    width: 170,
+                    height: 220,
+                    child: Opacity(
+                      opacity: 0.9,
+                      child: card,
+                    ),
+                  ),
+                ),
+                childWhenDragging: Opacity(
+                  opacity: 0.25,
+                  child: card,
+                ),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  transform: isHovered ? Matrix4.diagonal3Values(1.05, 1.05, 1.0) : Matrix4.identity(),
+                  child: card,
+                ),
+              );
+            },
+          )
+        : card;
 
-    return DragTarget<int>(
-      onWillAcceptWithDetails: (details) => details.data != originalIndex,
-      onAcceptWithDetails: (details) {
-        manager.reorderTab(details.data, originalIndex, incognito: _showingIncognito);
-        HapticFeedback.mediumImpact();
-      },
-      builder: (context, candidateData, rejectedData) {
-        final isHovered = candidateData.isNotEmpty;
-        return LongPressDraggable<int>(
-          data: originalIndex,
-          feedback: Material(
-            elevation: 10,
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              width: 170,
-              height: 220,
-              child: Opacity(
-                opacity: 0.9,
-                child: card,
-              ),
-            ),
-          ),
-          childWhenDragging: Opacity(
-            opacity: 0.25,
-            child: card,
-          ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            transform: isHovered ? Matrix4.diagonal3Values(1.05, 1.05, 1.0) : Matrix4.identity(),
-            child: card,
-          ),
-        );
-      },
+    return _wrapWithDismissible(
+      context: context,
+      tab: tab,
+      originalIndex: originalIndex,
+      manager: manager,
+      child: itemWidget,
     );
   }
 
