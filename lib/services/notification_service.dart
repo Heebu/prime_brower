@@ -4,6 +4,17 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+/// Top-level background message handler for FCM pushes received in background or terminated state
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (_) {}
+  debugPrint('Handling background FCM push: ${message.messageId}');
+}
+
 enum NotificationType {
   news,
   advert,
@@ -290,7 +301,7 @@ class NotificationService with ChangeNotifier {
     final sizeStr = bytes != null && bytes > 0
         ? ' (${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB)'
         : '';
-    final title = 'Download Complete';
+    const title = 'Download Complete';
     final body = '$fileName$sizeStr is ready to open.';
 
     final record = NotificationActionPayload(

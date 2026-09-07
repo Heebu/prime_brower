@@ -8,6 +8,7 @@ enum BannerType {
   insecureHttp,
   permission,
   readerModeSuggestion,
+  popupBlocked,
 }
 
 enum PermissionType {
@@ -205,6 +206,32 @@ class BrowserBanner {
       accentColor: const Color(0xFF8B5CF6), // Purple
       primaryActionLabel: 'Reader Mode',
       onPrimaryAction: onOpenReaderMode,
+      secondaryActionLabel: 'Dismiss',
+      onSecondaryAction: onDismiss,
+      onDismiss: onDismiss,
+    );
+  }
+
+  factory BrowserBanner.popupBlocked({
+    required String blockedUrl,
+    required VoidCallback onAllowOnce,
+    VoidCallback? onDismiss,
+  }) {
+    String domain = blockedUrl;
+    try {
+      final uri = Uri.parse(blockedUrl);
+      if (uri.host.isNotEmpty) domain = uri.host;
+    } catch (_) {}
+
+    return BrowserBanner(
+      id: 'popup_blocked_${DateTime.now().microsecondsSinceEpoch}',
+      type: BannerType.popupBlocked,
+      title: 'Pop-up Window Blocked',
+      message: 'Prime Shields blocked a pop-up window or redirect to "$domain".',
+      icon: Icons.open_in_new_off_rounded,
+      accentColor: const Color(0xFF6366F1), // Indigo
+      primaryActionLabel: 'Allow Once',
+      onPrimaryAction: onAllowOnce,
       secondaryActionLabel: 'Dismiss',
       onSecondaryAction: onDismiss,
       onDismiss: onDismiss,

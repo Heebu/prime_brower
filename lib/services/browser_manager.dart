@@ -239,7 +239,17 @@ class BrowserManager with ChangeNotifier {
         }
         notifyListeners();
       },
-      onNavigationRequestFilter: (url) => shieldsService.shouldAllowNavigation(url),
+      onNavigationRequestFilter: (url) {
+        final allowed = shieldsService.shouldAllowNavigation(url);
+        if (!allowed) {
+          ConnectivityBannerService.instance.showPopupBlockedBanner(
+            tab.id,
+            blockedUrl: url,
+            onAllowOnce: () => tab.loadUrl(url),
+          );
+        }
+        return allowed;
+      },
       onDownloadRequested: (downloadUrl) {
         downloadService.startDownload(downloadUrl);
         onDownloadStarted?.call(downloadUrl);

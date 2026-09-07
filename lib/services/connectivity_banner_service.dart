@@ -234,6 +234,22 @@ class ConnectivityBannerService with ChangeNotifier {
     );
   }
 
+  void showPopupBlockedBanner(
+    String tabId, {
+    required String blockedUrl,
+    required VoidCallback onAllowOnce,
+    VoidCallback? onDismiss,
+  }) {
+    addBanner(
+      tabId,
+      BrowserBanner.popupBlocked(
+        blockedUrl: blockedUrl,
+        onAllowOnce: onAllowOnce,
+        onDismiss: onDismiss,
+      ),
+    );
+  }
+
   // --- Simulation Helpers (For developer testing & user test modal) ---
 
   void simulateNoNetwork(String tabId, {VoidCallback? onPlayGame, VoidCallback? onRetry}) {
@@ -290,6 +306,14 @@ class ConnectivityBannerService with ChangeNotifier {
     showReaderModeSuggestion(
       tabId,
       onOpenReaderMode: onOpenReader ?? () {},
+    );
+  }
+
+  void simulatePopupBlocked(String tabId, {String? blockedUrl, VoidCallback? onAllowOnce}) {
+    showPopupBlockedBanner(
+      tabId,
+      blockedUrl: blockedUrl ?? 'https://promo-ad-tracker.net/click?offer=123',
+      onAllowOnce: onAllowOnce ?? () {},
     );
   }
 

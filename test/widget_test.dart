@@ -21,6 +21,7 @@ import 'package:prime_brower/services/theme_service.dart';
 import 'package:prime_brower/services/feed_ad_service.dart';
 import 'package:prime_brower/ui/new_tab/new_tab_dashboard.dart';
 import 'package:prime_brower/ui/copilot/copilot_sheet.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:prime_brower/services/notification_service.dart';
 import 'package:prime_brower/ui/widgets/notification_settings_sheet.dart';
 import 'package:prime_brower/models/browser_banner.dart';
@@ -1030,6 +1031,65 @@ void main() {
     // Verify banner was registered for the active tab
     final banners = ConnectivityBannerService.instance.getBannersForTab(manager.currentTab!.id);
     expect(banners.any((b) => b.type == BannerType.noNetwork), true);
+  });
+
+  test('FCM background message handler can be invoked safely', () async {
+    const message = RemoteMessage(
+      messageId: 'test_fcm_bg_999',
+      data: {'type': 'advert', 'title': 'Flash Sale', 'url': 'https://deal.com'},
+    );
+    // Ensure background handler processes without unhandled exceptions
+    await firebaseMessagingBackgroundHandler(message);
+    expect(message.messageId, 'test_fcm_bg_999');
+  });
+
+  testWidgets('Pop-up Blocked banner registration and interaction test', (WidgetTester tester) async {
+    bool allowOnceTriggered = false;
+    final banner = BrowserBanner.popupBlocked(
+      blockedUrl: 'https://deceptive-popup.com/ad',
+      onAllowOnce: () => allowOnceTriggered = true,
+    );
+
+    expect(banner.type, BannerType.popupBlocked);
+    expect(banner.title, 'Pop-up Window Blocked');
+    expect(banner.message.contains('deceptive-popup.com'), true);
+    expect(banner.primaryActionLabel, 'Allow Once');
+    expect(banner.secondaryActionLabel, 'Dismiss');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserBannerWidget(
+            banner: banner,
+            onDismiss: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pop-up Window Blocked'), findsOneWidget);
+    expect(find.text('Allow Once'), findsOneWidget);
+
+    await tester.tap(find.text('Allow Once'));
+    await tester.pump();
+    expect(allowOnceTriggered, true);
+  });
+
+  test('BrowserManager onNavigationRequestFilter triggers popupBlocked banner', () {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+    final activeTab = manager.currentTab!;
+
+    // Ad/tracker URL that is blocked by shields
+    const blockedAdUrl = 'https://googleads.g.doubleclick.net/pagead/ads';
+    final allowed = activeTab.onNavigationRequestFilter?.call(blockedAdUrl);
+
+    expect(allowed, false);
+    final banners = ConnectivityBannerService.instance.getBannersForTab(activeTab.id);
+    expect(banners.any((b) => b.type == BannerType.popupBlocked), true);
+    final popupBanner = banners.firstWhere((b) => b.type == BannerType.popupBlocked);
+    expect(popupBanner.message.contains('doubleclick.net'), true);
   });
 }
 

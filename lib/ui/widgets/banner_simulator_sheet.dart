@@ -284,6 +284,19 @@ class BannerSimulatorSheet extends StatelessWidget {
                     },
                   ),
 
+                  // Pop-up / Deceptive Redirect Blocked Banner
+                  ActionChip(
+                    avatar: const Icon(Icons.open_in_new_off_rounded, size: 16, color: Color(0xFF6366F1)),
+                    label: const Text('Pop-up Blocked'),
+                    onPressed: () {
+                      ConnectivityBannerService.instance.simulatePopupBlocked(
+                        activeTabId,
+                        blockedUrl: 'https://promo-ad-tracker.net/click?offer=123',
+                      );
+                      Navigator.pop(context);
+                    },
+                  ),
+
                   // Clear All Banners
                   ActionChip(
                     avatar: const Icon(Icons.clear_all_rounded, size: 16, color: Colors.blueGrey),
