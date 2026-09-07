@@ -11,7 +11,9 @@ import 'package:prime_brower/services/shields_service.dart';
 import 'package:prime_brower/ui/downloads/downloads_screen.dart';
 import 'package:prime_brower/ui/shields/shields_details_sheet.dart';
 import 'package:prime_brower/ui/tabs/tab_grid_screen.dart';
+import 'package:prime_brower/ui/widgets/omnibox_app_bar.dart';
 import 'package:prime_brower/ui/widgets/omnibox_suggestions_overlay.dart';
+import 'package:prime_brower/core/design_system/pull_to_refresh_wrapper.dart';
 import 'package:prime_brower/ui/widgets/browser_menu_sheet.dart';
 import 'package:prime_brower/ui/sync/cloud_sync_sheet.dart';
 import 'package:prime_brower/services/ai_copilot_service.dart';
@@ -1090,6 +1092,132 @@ void main() {
     expect(banners.any((b) => b.type == BannerType.popupBlocked), true);
     final popupBanner = banners.firstWhere((b) => b.type == BannerType.popupBlocked);
     expect(popupBanner.message.contains('doubleclick.net'), true);
+  });
+
+  testWidgets('PullToRefreshWrapper drag-down gesture triggers reload', (WidgetTester tester) async {
+    bool refreshed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PullToRefreshWrapper(
+            canRefresh: () => true,
+            onRefresh: () async {
+              await Future.delayed(const Duration(milliseconds: 50));
+              refreshed = true;
+            },
+            child: ListView(
+              children: const [
+                SizedBox(height: 200, child: Text('Page Content at Top')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Pull down by 150 pixels from top
+    await tester.drag(find.text('Page Content at Top'), const Offset(0, 150));
+    await tester.pump();
+
+    // Verify refresh indicator disc is displayed
+    expect(find.byIcon(Icons.refresh_rounded), findsOneWidget);
+
+    // Let the refresh complete
+    await tester.pumpAndSettle();
+    expect(refreshed, true);
+  });
+
+  testWidgets('PullToRefreshWrapper does not trigger when canRefresh is false', (WidgetTester tester) async {
+    bool refreshed = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PullToRefreshWrapper(
+            canRefresh: () => false,
+            onRefresh: () async {
+              refreshed = true;
+            },
+            child: ListView(
+              children: const [
+                SizedBox(height: 200, child: Text('Scrolled Down Content')),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('Scrolled Down Content'), const Offset(0, 150));
+    await tester.pumpAndSettle();
+
+    expect(refreshed, false);
+  });
+
+  testWidgets('Swipe down from top of app bar moves to all tabs', (WidgetTester tester) async {
+    bool tabsOpened = false;
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: OmniboxAppBar(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenMenu: () {},
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenTabs: () {
+              tabsOpened = true;
+            },
+          ),
+          body: const Center(child: Text('Web Browser Body')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Swipe down on the Omnibox / top app bar
+    await tester.drag(find.byType(OmniboxAppBar), const Offset(0, 80));
+    await tester.pump();
+
+    expect(tabsOpened, true);
+  });
+
+  testWidgets('Swipe horizontal across app bar switches adjacent tabs', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+    manager.openNewTab('https://flutter.dev');
+    expect(manager.currentTabIndex, 1);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          appBar: OmniboxAppBar(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenMenu: () {},
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenTabs: () {},
+          ),
+          body: const Center(child: Text('Body')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Swipe left to right (positive delta) -> previous tab (index 0)
+    await tester.drag(find.byType(OmniboxAppBar), const Offset(80, 0));
+    await tester.pumpAndSettle();
+
+    expect(manager.currentTabIndex, 0);
   });
 }
 

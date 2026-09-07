@@ -20,7 +20,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
   final FocusNode? focusNode;
 
   const OmniboxAppBar({
-    Key? key,
+    super.key,
     required this.browserManager,
     required this.shieldsService,
     required this.onOpenMenu,
@@ -33,7 +33,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.onQueryChanged,
     this.controller,
     this.focusNode,
-  }) : super(key: key);
+  });
 
   @override
   State<OmniboxAppBar> createState() => _OmniboxAppBarState();
@@ -45,6 +45,9 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _OmniboxAppBarState extends State<OmniboxAppBar> {
   TextEditingController? _internalController;
   FocusNode? _internalFocusNode;
+
+  double _verticalDragDistance = 0.0;
+  double _horizontalDragDistance = 0.0;
 
   TextEditingController get _effectiveController => widget.controller ?? _internalController!;
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode!;
@@ -160,24 +163,36 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
       child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onVerticalDragEnd: (details) {
-          if (!isFocused && (details.primaryVelocity ?? 0) > 250) {
-            HapticFeedback.mediumImpact();
-            widget.onOpenTabs?.call();
+        behavior: HitTestBehavior.opaque,
+        onPanStart: (_) {
+          _verticalDragDistance = 0.0;
+          _horizontalDragDistance = 0.0;
+        },
+        onPanUpdate: (details) {
+          if (!isFocused) {
+            _verticalDragDistance += details.delta.dy;
+            _horizontalDragDistance += details.delta.dx;
           }
         },
-        onHorizontalDragEnd: (details) {
+        onPanEnd: (details) {
           if (!isFocused) {
-            final vel = details.primaryVelocity ?? 0;
-            if (vel > 250) {
+            final vy = details.velocity.pixelsPerSecond.dy;
+            final vx = details.velocity.pixelsPerSecond.dx;
+
+            // Swiping down from top of app bar moves to all tabs
+            if (_verticalDragDistance > 25 || vy > 180) {
+              HapticFeedback.mediumImpact();
+              widget.onOpenTabs?.call();
+            } else if (_horizontalDragDistance > 35 || vx > 180) {
               HapticFeedback.selectionClick();
               widget.browserManager.switchToAdjacentTab(-1);
-            } else if (vel < -250) {
+            } else if (_horizontalDragDistance < -35 || vx < -180) {
               HapticFeedback.selectionClick();
               widget.browserManager.switchToAdjacentTab(1);
             }
           }
+          _verticalDragDistance = 0.0;
+          _horizontalDragDistance = 0.0;
         },
         child: AppBar(
           elevation: isFocused ? 2 : 0.5,
@@ -197,7 +212,14 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                 )
               : null,
           automaticallyImplyLeading: false,
-          title: AnimatedContainer(
+          title: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () {
+              if (!isFocused) {
+                _effectiveFocusNode.requestFocus();
+              }
+            },
+            child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             height: 42,
@@ -241,24 +263,27 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
 
                 // Omnibox URL Input
                 Expanded(
-                  child: TextField(
-                    controller: _effectiveController,
-                    focusNode: _effectiveFocusNode,
-                    textInputAction: TextInputAction.go,
-                    onSubmitted: (_) => _submitUrl(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isIncognito ? Colors.white : Colors.black87,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search or type URL',
-                      hintStyle: TextStyle(
-                        color: isIncognito ? Colors.white38 : Colors.grey[500],
-                        fontSize: 13,
+                  child: IgnorePointer(
+                    ignoring: !isFocused,
+                    child: TextField(
+                      controller: _effectiveController,
+                      focusNode: _effectiveFocusNode,
+                      textInputAction: TextInputAction.go,
+                      onSubmitted: (_) => _submitUrl(),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isIncognito ? Colors.white : Colors.black87,
                       ),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: InputDecoration(
+                        hintText: 'Search or type URL',
+                        hintStyle: TextStyle(
+                          color: isIncognito ? Colors.white38 : Colors.grey[500],
+                          fontSize: 13,
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
                     ),
                   ),
                 ),
@@ -287,7 +312,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.deepOrangeAccent.withOpacity(0.15),
+                        color: Colors.deepOrangeAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
@@ -309,6 +334,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                   ),
               ],
             ),
+            ),
           ),
           actions: isFocused
               ? const []
@@ -324,7 +350,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.purple.withOpacity(0.3),
+                            color: Colors.purple.withValues(alpha: 0.3),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),

@@ -35,6 +35,8 @@ class WebTab {
   bool hasError = false;
   String? errorMessage;
   bool isOffline = false;
+  double currentScrollY = 0.0;
+  bool get isAtTop => currentScrollY <= 5.0;
 
   WebTab({
     required this.id,
@@ -97,6 +99,9 @@ class WebTab {
     try {
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setOnScrollPositionChange((ScrollPositionChange change) {
+          currentScrollY = change.y;
+        })
         ..setNavigationDelegate(
           NavigationDelegate(
             onNavigationRequest: (NavigationRequest request) {
@@ -130,6 +135,7 @@ class WebTab {
               hasError = false;
               errorMessage = null;
               isOffline = false;
+              currentScrollY = 0.0;
               lastActiveTime = DateTime.now();
               onUrlChanged?.call(currentUrl);
               onLoadingChanged?.call(true);
@@ -206,6 +212,7 @@ class WebTab {
     hasError = false;
     errorMessage = null;
     isOffline = false;
+    currentScrollY = 0.0;
     lastActiveTime = DateTime.now();
     if (newUrl == 'prime://newtab') {
       title = 'New Tab';
@@ -228,6 +235,7 @@ class WebTab {
     hasError = false;
     errorMessage = null;
     isOffline = false;
+    currentScrollY = 0.0;
     if (isFrozen) {
       thaw();
     } else {

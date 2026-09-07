@@ -26,6 +26,7 @@ class WebViewPage extends StatelessWidget {
     if (tab.isNewTabPage) {
       return PullToRefreshWrapper(
         isIncognito: browserManager.isIncognito,
+        canRefresh: () => true,
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 400));
           tab.reload();
@@ -51,6 +52,7 @@ class WebViewPage extends StatelessWidget {
 
     return PullToRefreshWrapper(
       isIncognito: browserManager.isIncognito,
+      canRefresh: () => tab.isAtTop,
       onRefresh: () async {
         tab.reload();
         await Future.delayed(const Duration(milliseconds: 500));
