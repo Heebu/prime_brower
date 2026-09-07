@@ -17,7 +17,7 @@ class BrowserMenuSheet extends StatelessWidget {
   final VoidCallback? onOpenShieldsDetails;
 
   const BrowserMenuSheet({
-    Key? key,
+    super.key,
     required this.browserManager,
     required this.shieldsService,
     required this.onOpenCopilot,
@@ -25,18 +25,20 @@ class BrowserMenuSheet extends StatelessWidget {
     required this.onOpenSync,
     required this.onOpenDownloads,
     this.onOpenShieldsDetails,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     final currentTab = browserManager.currentTab;
     final isBookmarked = currentTab != null && browserManager.isBookmarked(currentTab.url);
+    final isIncognito = browserManager.isIncognito;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      clipBehavior: Clip.antiAlias,
       child: SafeArea(
         child: SingleChildScrollView(
           child: Column(

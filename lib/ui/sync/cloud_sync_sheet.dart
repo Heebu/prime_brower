@@ -54,14 +54,16 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
     final isAuthenticated = widget.authService.isAuthenticated;
     final user = widget.authService.currentUser;
 
-    return Container(
+    return SizedBox(
       height: MediaQuery.of(context).size.height * 0.78,
-      decoration: BoxDecoration(
+      child: Material(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Column(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
+          child: Column(
           children: [
             // Handle bar
             Container(
@@ -166,6 +168,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

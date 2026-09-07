@@ -12,6 +12,10 @@ import 'package:prime_brower/ui/downloads/downloads_screen.dart';
 import 'package:prime_brower/ui/shields/shields_details_sheet.dart';
 import 'package:prime_brower/ui/tabs/tab_grid_screen.dart';
 import 'package:prime_brower/ui/widgets/omnibox_suggestions_overlay.dart';
+import 'package:prime_brower/ui/widgets/browser_menu_sheet.dart';
+import 'package:prime_brower/ui/sync/cloud_sync_sheet.dart';
+import 'package:prime_brower/services/firebase_auth_service.dart';
+import 'package:prime_brower/services/firebase_sync_service.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -297,6 +301,10 @@ void main() {
     expect(find.text('RECENT SEARCHES'), findsOneWidget);
     expect(find.text('flutter tutorial'), findsOneWidget);
 
+    // Tap search option for typing query
+    await tester.tap(find.text('flutt'));
+    expect(selectedValue, 'flutt');
+
     // Tap quick-fill arrow on recent search
     final quickFillIcon = find.byIcon(Icons.north_west_rounded);
     expect(quickFillIcon, findsAtLeastNWidgets(1));
@@ -333,6 +341,59 @@ void main() {
     // Switch filter to By Domain
     await tester.tap(find.text('By Domain'));
     await tester.pump();
+  });
+
+  testWidgets('BrowserMenuSheet smoke test with zero ListTile ink assertions', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserMenuSheet(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenDownloads: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify key menu items rendered without framework assertions
+    expect(find.text('Prime Cloud Sync'), findsOneWidget);
+    expect(find.text('Prime Shields (Brave)'), findsOneWidget);
+    expect(find.text('Edge Copilot AI'), findsOneWidget);
+    expect(find.text('Find in Page'), findsOneWidget);
+    expect(find.text('Inspect Element (Mobile DevTools)'), findsOneWidget);
+  });
+
+  testWidgets('CloudSyncSheet smoke test with zero ListTile ink assertions', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final auth = FirebaseAuthService();
+    final sync = FirebaseSyncService();
+    final manager = BrowserManager(shieldsService: shields, authService: auth, syncService: sync);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CloudSyncSheet(
+            authService: auth,
+            syncService: sync,
+            browserManager: manager,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Prime Cloud Sync'), findsOneWidget);
+    expect(find.text('Sync Options'), findsOneWidget);
+    expect(find.text('Bookmarks & Collections'), findsOneWidget);
+    expect(find.text('Open Tabs Mirroring'), findsOneWidget);
   });
 }
 
