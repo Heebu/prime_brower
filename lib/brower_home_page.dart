@@ -9,7 +9,6 @@ import 'services/firebase_sync_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
 import 'ui/widgets/omnibox_suggestions_overlay.dart';
-import 'ui/widgets/bottom_nav_bar.dart';
 import 'ui/widgets/browser_menu_sheet.dart';
 import 'ui/tabs/tab_grid_screen.dart';
 import 'ui/copilot/copilot_sheet.dart';
@@ -316,11 +315,6 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
                     ),
                   ),
               ],
-            ),
-            bottomNavigationBar: BottomNavBar(
-              browserManager: _browserManager,
-              onOpenTabs: _openTabGrid,
-              onOpenMenu: _openMenuSheet,
             ),
           ),
         );

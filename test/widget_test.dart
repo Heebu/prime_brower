@@ -28,14 +28,13 @@ void main() {
     // Verify search/URL input fields are present (Omnibox + New Tab Dashboard search)
     expect(find.byType(TextField), findsAtLeastNWidgets(1));
 
-    // Verify bottom navigation bar buttons are present
+    // Verify top toolbar navigation buttons are present (home, tabs, more)
     expect(find.byIcon(Icons.home_outlined), findsOneWidget);
     expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
     expect(find.byIcon(Icons.more_vert), findsOneWidget);
 
-    // Verify Pi AI button (in Omnibox pill & speed dial) and Cloud Sync are present
+    // Verify Pi AI button (in Omnibox pill & speed dial)
     expect(find.text('Pi AI'), findsNWidgets(2));
-    expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
 
     // Verify New Tab Start Dashboard elements
     expect(find.text('Prime Browser'), findsOneWidget);
@@ -367,6 +366,8 @@ void main() {
     await tester.pump();
 
     // Verify key menu items rendered without framework assertions
+    expect(find.text('Refresh'), findsOneWidget);
+    expect(find.byIcon(Icons.refresh), findsWidgets);
     expect(find.text('Prime Cloud Sync'), findsOneWidget);
     expect(find.text('Prime Shields'), findsOneWidget);
     expect(find.text('Pi AI'), findsOneWidget);
@@ -433,6 +434,22 @@ void main() {
     expect(summary.contains('Pi AI'), true);
     expect(summary.contains('Edge Copilot'), false);
     expect(summary.contains('Gemini'), false);
+  });
+
+  testWidgets('Top toolbar actions and clean down panel test', (WidgetTester tester) async {
+    await tester.pumpWidget(const BrowserApp());
+    await tester.pump();
+
+    // Verify top toolbar has Home icon (replacing Cloud Sync), Tabs, and Menu
+    expect(find.byIcon(Icons.home_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.more_vert), findsOneWidget);
+
+    // Verify cloud sync icon is not on the top screen
+    expect(find.byIcon(Icons.cloud_outlined), findsNothing);
+
+    // Verify down panel (BottomAppBar) is cleared out
+    expect(find.byType(BottomAppBar), findsNothing);
   });
 }
 

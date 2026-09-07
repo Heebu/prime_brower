@@ -155,6 +155,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
     final isNewTab = tab == null || tab.url == 'prime://newtab';
     final isHttps = tab != null && tab.url.startsWith('https://');
     final isFocused = _effectiveFocusNode.hasFocus;
+    final tabsCount = widget.browserManager.currentTabs.length;
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(56),
@@ -346,19 +347,53 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                       ),
                     ),
                   ),
-                  // Cloud Sync / Account Button
+                  // Home Button (replaces cloud sync)
                   IconButton(
-                    icon: Icon(
-                      widget.browserManager.authService?.isAuthenticated == true
-                          ? Icons.cloud_done
-                          : Icons.cloud_outlined,
-                      size: 20,
-                      color: widget.browserManager.authService?.isAuthenticated == true
-                          ? Colors.green
-                          : null,
-                    ),
-                    tooltip: 'Prime Cloud Sync',
-                    onPressed: widget.onOpenSync,
+                    icon: const Icon(Icons.home_outlined, size: 22),
+                    tooltip: 'Home',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => widget.browserManager.navigateCurrentTab('prime://newtab'),
+                  ),
+                  // Tab Switcher with live badge
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.layers_outlined, size: 22),
+                        tooltip: 'Tabs',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: widget.onOpenTabs,
+                      ),
+                      if (tabsCount > 0)
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                            child: Text(
+                              '$tabsCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  // More Options Overflow Menu
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, size: 22),
+                    tooltip: 'Menu',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: widget.onOpenMenu,
                   ),
                 ],
         ),

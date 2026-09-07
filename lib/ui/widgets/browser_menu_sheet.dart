@@ -106,6 +106,18 @@ class BrowserMenuSheet extends StatelessWidget {
               ),
               const Divider(height: 1),
 
+              // Refresh Page Action
+              ListTile(
+                leading: const Icon(Icons.refresh, color: Colors.blueAccent),
+                title: const Text('Refresh'),
+                subtitle: const Text('Reload current web page'),
+                onTap: () {
+                  Navigator.pop(context);
+                  currentTab?.reload();
+                },
+              ),
+              const Divider(height: 1),
+
               // Prime Cloud Sync Account tile
               ListTile(
                 leading: Icon(
