@@ -106,51 +106,55 @@ class BrowserBannerWidget extends StatelessWidget {
             if (banner.primaryActionLabel != null || banner.secondaryActionLabel != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (banner.secondaryActionLabel != null) ...[
-                      TextButton(
-                        onPressed: () {
-                          banner.onSecondaryAction?.call();
-                          onDismiss();
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white70 : Colors.black54,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          minimumSize: const Size(40, 28),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          banner.secondaryActionLabel!,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    if (banner.primaryActionLabel != null)
-                      ElevatedButton(
-                        onPressed: () {
-                          banner.onPrimaryAction?.call();
-                          onDismiss();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: banner.accentColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          minimumSize: const Size(50, 28),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      if (banner.secondaryActionLabel != null)
+                        TextButton(
+                          onPressed: () {
+                            banner.onSecondaryAction?.call();
+                            onDismiss();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white70 : Colors.black54,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            minimumSize: const Size(40, 28),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            banner.secondaryActionLabel!,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                           ),
                         ),
-                        child: Text(
-                          banner.primaryActionLabel!,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      if (banner.primaryActionLabel != null)
+                        ElevatedButton(
+                          onPressed: () {
+                            banner.onPrimaryAction?.call();
+                            onDismiss();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: banner.accentColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            minimumSize: const Size(50, 28),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: Text(
+                            banner.primaryActionLabel!,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
           ],

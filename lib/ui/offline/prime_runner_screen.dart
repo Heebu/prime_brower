@@ -502,8 +502,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
   Widget _buildReadyOverlay() {
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A).withOpacity(0.9),
           borderRadius: BorderRadius.circular(16),
@@ -556,8 +556,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
     final isNewHigh = _score >= _highScore && _score > 0;
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
           color: const Color(0xFF0F172A).withOpacity(0.95),
           borderRadius: BorderRadius.circular(16),
@@ -591,24 +591,29 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 OutlinedButton.icon(
                   onPressed: widget.onRetryConnection,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    visualDensity: VisualDensity.compact,
                   ),
                   icon: const Icon(Icons.refresh, size: 16),
                   label: const Text('Retry Network'),
                 ),
-                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: _startGame,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF38BDF8),
                     foregroundColor: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    visualDensity: VisualDensity.compact,
                   ),
                   icon: const Icon(Icons.replay_rounded, size: 16),
                   label: const Text('Play Again', style: TextStyle(fontWeight: FontWeight.bold)),
