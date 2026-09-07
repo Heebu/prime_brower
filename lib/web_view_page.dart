@@ -28,6 +28,7 @@ class WebViewPage extends StatelessWidget {
           tab.reload();
         },
         child: NewTabDashboard(
+          tabId: tab.id,
           browserManager: browserManager,
           shieldsService: shieldsService,
           onNavigate: (url) => tab.loadUrl(url),

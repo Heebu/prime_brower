@@ -6,6 +6,7 @@ import 'services/ai_copilot_service.dart';
 import 'services/devtools_service.dart';
 import 'services/firebase_auth_service.dart';
 import 'services/firebase_sync_service.dart';
+import 'services/theme_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
 import 'ui/widgets/omnibox_suggestions_overlay.dart';
@@ -182,6 +183,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
         final currentTab = _browserManager.currentTab;
         final tabs = _browserManager.currentTabs;
         final isIncognito = _browserManager.isIncognito;
+        final isDark = isIncognito || ThemeService.instance.isDarkMode(context);
 
         return PopScope(
           canPop: !_isOmniboxFocused && !_isFindInPageActive,
@@ -197,7 +199,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
             }
           },
           child: Scaffold(
-            backgroundColor: isIncognito ? const Color(0xFF121212) : Colors.grey[100],
+            backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[100],
             appBar: OmniboxAppBar(
               key: ValueKey('omnibox_${currentTab?.id}_$isIncognito'),
               browserManager: _browserManager,

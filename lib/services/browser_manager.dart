@@ -7,10 +7,12 @@ import 'firebase_auth_service.dart';
 import 'firebase_sync_service.dart';
 
 import 'download_service.dart';
+import 'feed_ad_service.dart';
 
 class BrowserManager with ChangeNotifier {
   final ShieldsService shieldsService;
   final DownloadService downloadService;
+  final FeedAdService feedAdService;
   final FirebaseAuthService? authService;
   final FirebaseSyncService? syncService;
   final void Function(String url)? onDownloadStarted;
@@ -36,10 +38,12 @@ class BrowserManager with ChangeNotifier {
   BrowserManager({
     required this.shieldsService,
     DownloadService? downloadService,
+    FeedAdService? feedAdService,
     this.authService,
     this.syncService,
     this.onDownloadStarted,
-  }) : downloadService = downloadService ?? DownloadService() {
+  })  : downloadService = downloadService ?? DownloadService(),
+        feedAdService = feedAdService ?? FeedAdService() {
     // Open default initial normal tab on start dashboard
     openNewTab('prime://newtab', incognito: false);
     _initCloudSync();

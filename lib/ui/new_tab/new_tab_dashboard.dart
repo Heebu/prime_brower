@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/speed_dial_item.dart';
 import '../../models/bookmark.dart';
 import '../../services/browser_manager.dart';
 import '../../services/shields_service.dart';
+import '../../services/feed_ad_service.dart';
 import '../../core/design_system/app_colors.dart';
 import '../../core/design_system/animated_pressable.dart';
 import '../../core/design_system/responsive_layout.dart';
 import '../shields/shields_details_sheet.dart';
+import 'widgets/news_feed_card.dart';
+import 'widgets/ad_card_widget.dart';
 
 class NewTabDashboard extends StatefulWidget {
   final BrowserManager browserManager;
   final ShieldsService shieldsService;
   final void Function(String url) onNavigate;
+  final String tabId;
 
   const NewTabDashboard({
     Key? key,
     required this.browserManager,
     required this.shieldsService,
     required this.onNavigate,
+    this.tabId = 'tab_default',
   }) : super(key: key);
 
   @override
@@ -37,6 +43,8 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
   };
 
   late List<SpeedDialItem> _speedDialItems;
+  String _selectedCategory = 'All';
+  static const List<String> _categories = ['All', 'Tech', 'Business', 'World', 'Science', 'Sports'];
 
   @override
   void initState() {
@@ -143,15 +151,20 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.browserManager, widget.shieldsService]),
+      animation: Listenable.merge([
+        widget.browserManager,
+        widget.shieldsService,
+        widget.browserManager.feedAdService,
+      ]),
       builder: (context, _) {
         final isIncognito = widget.browserManager.isIncognito;
+        final isDark = isIncognito || Theme.of(context).brightness == Brightness.dark;
         final blockedCount = widget.shieldsService.blockedElementsCount;
         final dataSavedMb = (blockedCount * 0.165).toStringAsFixed(1);
         final timeSavedSec = (blockedCount * 0.45).toStringAsFixed(1);
 
         return Scaffold(
-      backgroundColor: isIncognito ? const Color(0xFF121212) : const Color(0xFFF8F9FD),
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FD),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -643,6 +656,173 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                   ),
                 ),
               ],
+
+              // Trending Feeds & News Updates Section
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.newspaper_rounded,
+                          size: 16,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'FEEDS & NEWS UPDATES',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          color: isDark ? Colors.white70 : Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Shuffle / Refresh Feed Button
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      widget.browserManager.feedAdService.refreshTabFeed(widget.tabId);
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Feed re-shuffled with fresh stories & updates!'),
+                          duration: Duration(milliseconds: 1500),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white10 : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.shuffle_rounded,
+                            size: 14,
+                            color: isDark ? Colors.white70 : const Color(0xFF4F46E5),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Shuffle',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white70 : const Color(0xFF4F46E5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Category Filter Pills
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _categories.map((cat) {
+                    final isSelected = _selectedCategory == cat;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedCategory = cat),
+                        borderRadius: BorderRadius.circular(20),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF6366F1)
+                                : (isDark ? Colors.white10 : Colors.white),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF6366F1)
+                                  : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+                            ),
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? Colors.white70 : Colors.grey[700]),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Feeds & Adverts List
+              Builder(
+                builder: (context) {
+                  final feedEntries = widget.browserManager.feedAdService.getFeedForTab(
+                    tabId: widget.tabId,
+                    selectedCategory: _selectedCategory,
+                  );
+
+                  if (feedEntries.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Center(
+                        child: Text(
+                          'No feeds available in this category',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white54 : Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: feedEntries.length,
+                    itemBuilder: (context, idx) {
+                      final entry = feedEntries[idx];
+                      if (entry.isNews) {
+                        return NewsFeedCard(
+                          item: entry.news!,
+                          isDark: isDark,
+                          onTap: widget.onNavigate,
+                        );
+                      } else {
+                        return AdCardWidget(
+                          ad: entry.ad!,
+                          isDark: isDark,
+                          onTap: widget.onNavigate,
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),

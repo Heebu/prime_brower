@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/browser_manager.dart';
 import '../../services/devtools_service.dart';
 import '../../services/shields_service.dart';
+import '../../services/theme_service.dart';
 import '../devtools/source_viewer_screen.dart';
 import '../devtools/js_console_dialog.dart';
 import '../productivity/reader_mode_screen.dart';
@@ -115,6 +117,99 @@ class BrowserMenuSheet extends StatelessWidget {
                   Navigator.pop(context);
                   currentTab?.reload();
                 },
+              ),
+              const Divider(height: 1),
+
+              // Theme Mode Selector Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: AnimatedBuilder(
+                  animation: ThemeService.instance,
+                  builder: (context, _) {
+                    final currentMode = ThemeService.instance.currentMode;
+                    final isDarkSheet = Theme.of(context).brightness == Brightness.dark || browserManager.isIncognito;
+
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDarkSheet ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDarkSheet ? Colors.white12 : Colors.grey.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                currentMode == AppThemeMode.dark
+                                    ? Icons.dark_mode_rounded
+                                    : (currentMode == AppThemeMode.light
+                                        ? Icons.light_mode_rounded
+                                        : Icons.brightness_auto_rounded),
+                                size: 18,
+                                color: const Color(0xFF3B82F6),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Theme Mode',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDarkSheet ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                currentMode == AppThemeMode.dark
+                                    ? 'Dark'
+                                    : (currentMode == AppThemeMode.light ? 'Light' : 'System Default'),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDarkSheet ? Colors.white54 : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _buildThemeOption(
+                                context: context,
+                                label: 'Light',
+                                icon: Icons.light_mode_outlined,
+                                mode: AppThemeMode.light,
+                                isSelected: currentMode == AppThemeMode.light,
+                                isDark: isDarkSheet,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildThemeOption(
+                                context: context,
+                                label: 'Dark',
+                                icon: Icons.dark_mode_outlined,
+                                mode: AppThemeMode.dark,
+                                isSelected: currentMode == AppThemeMode.dark,
+                                isDark: isDarkSheet,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildThemeOption(
+                                context: context,
+                                label: 'System',
+                                icon: Icons.brightness_auto_outlined,
+                                mode: AppThemeMode.system,
+                                isSelected: currentMode == AppThemeMode.system,
+                                isDark: isDarkSheet,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
               const Divider(height: 1),
 
@@ -362,6 +457,72 @@ class BrowserMenuSheet extends StatelessWidget {
                   Navigator.pop(context);
                   browserManager.openNewTab('prime://newtab', incognito: true);
                 },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required BuildContext context,
+    required String label,
+    required IconData icon,
+    required AppThemeMode mode,
+    required bool isSelected,
+    required bool isDark,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          ThemeService.instance.setThemeMode(mode);
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color(0xFF3B82F6)
+                : (isDark ? Colors.white10 : Colors.white),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF3B82F6)
+                  : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.white70 : Colors.grey[700]),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.white70 : Colors.grey[800]),
+                ),
               ),
             ],
           ),

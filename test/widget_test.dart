@@ -17,6 +17,9 @@ import 'package:prime_brower/ui/sync/cloud_sync_sheet.dart';
 import 'package:prime_brower/services/ai_copilot_service.dart';
 import 'package:prime_brower/services/firebase_auth_service.dart';
 import 'package:prime_brower/services/firebase_sync_service.dart';
+import 'package:prime_brower/services/theme_service.dart';
+import 'package:prime_brower/services/feed_ad_service.dart';
+import 'package:prime_brower/ui/new_tab/new_tab_dashboard.dart';
 import 'package:prime_brower/ui/copilot/copilot_sheet.dart';
 
 void main() {
@@ -501,6 +504,135 @@ void main() {
 
     // Tab should be restored
     expect(manager.normalTabs.length, 3);
+  });
+
+  test('ThemeService real-time mode switching test', () {
+    final themeService = ThemeService.instance;
+
+    // Switch to dark mode
+    themeService.setThemeMode(AppThemeMode.dark);
+    expect(themeService.currentMode, AppThemeMode.dark);
+    expect(themeService.themeMode, ThemeMode.dark);
+
+    // Switch to light mode
+    themeService.setThemeMode(AppThemeMode.light);
+    expect(themeService.currentMode, AppThemeMode.light);
+    expect(themeService.themeMode, ThemeMode.light);
+
+    // Switch to system mode
+    themeService.setThemeMode(AppThemeMode.system);
+    expect(themeService.currentMode, AppThemeMode.system);
+    expect(themeService.themeMode, ThemeMode.system);
+  });
+
+  test('FeedAdService per-tab randomization, category filter, and adverts test', () {
+    final service = FeedAdService(userDeviceId: 'test_user_device_123');
+
+    // Fetch feed for Tab A and Tab B
+    final feedTabA = service.getFeedForTab(tabId: 'tab_alpha');
+    final feedTabB = service.getFeedForTab(tabId: 'tab_beta');
+
+    expect(feedTabA.isNotEmpty, isTrue);
+    expect(feedTabB.isNotEmpty, isTrue);
+
+    // Verify both feeds contain news and adverts
+    expect(feedTabA.any((e) => e.isNews), isTrue);
+    expect(feedTabA.any((e) => e.isAd), isTrue);
+
+    // Verify Tab A and Tab B have differing permutations (differ per tab)
+    final idsA = feedTabA.map((e) => e.id).toList();
+    final idsB = feedTabB.map((e) => e.id).toList();
+    expect(idsA, isNot(equals(idsB)));
+
+    // Test Category Filtering
+    final techFeed = service.getFeedForTab(tabId: 'tab_alpha', selectedCategory: 'Tech');
+    for (final entry in techFeed) {
+      if (entry.isNews) {
+        expect(entry.news!.category, 'Tech');
+      }
+    }
+  });
+
+  testWidgets('NewTabDashboard feeds, adverts, and shuffle test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NewTabDashboard(
+            browserManager: manager,
+            shieldsService: shields,
+            onNavigate: (_) {},
+            tabId: 'tab_test_1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify section header
+    expect(find.text('FEEDS & NEWS UPDATES'), findsOneWidget);
+
+    // Verify category filter chips
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Tech'), findsOneWidget);
+    expect(find.text('Business'), findsOneWidget);
+    expect(find.text('Science'), findsOneWidget);
+
+    // Verify Shuffle button is present
+    expect(find.text('Shuffle'), findsOneWidget);
+
+    // Scroll to Shuffle button and tap it
+    await tester.ensureVisible(find.text('Shuffle'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Shuffle'));
+    await tester.pumpAndSettle();
+
+    // Verify SnackBar confirmation
+    expect(find.text('Feed re-shuffled with fresh stories & updates!'), findsOneWidget);
+  });
+
+  testWidgets('BrowserMenuSheet real-time theme mode selector test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserMenuSheet(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenDownloads: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Theme Mode section is displayed
+    expect(find.text('Theme Mode'), findsOneWidget);
+    expect(find.text('Light'), findsOneWidget);
+    expect(find.text('Dark'), findsOneWidget);
+    expect(find.text('System'), findsOneWidget);
+
+    // Tap Dark mode option
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    expect(ThemeService.instance.currentMode, AppThemeMode.dark);
+
+    // Tap Light mode option
+    await tester.tap(find.text('Light'));
+    await tester.pumpAndSettle();
+    expect(ThemeService.instance.currentMode, AppThemeMode.light);
+
+    // Tap System mode option
+    await tester.tap(find.text('System'));
+    await tester.pumpAndSettle();
+    expect(ThemeService.instance.currentMode, AppThemeMode.system);
   });
 }
 
