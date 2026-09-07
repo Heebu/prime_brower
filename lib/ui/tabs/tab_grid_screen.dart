@@ -42,7 +42,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
         final manager = widget.browserManager;
         final allTabs = _showingIncognito ? manager.incognitoTabs : manager.normalTabs;
         final activeIndex = _showingIncognito ? manager.incognitoTabIndex : manager.normalTabIndex;
-        final isDark = _showingIncognito;
+        final isDark = _showingIncognito || Theme.of(context).brightness == Brightness.dark;
         final pinnedCount = allTabs.where((t) => t.isPinned).length;
 
         // Filter and search logic
@@ -64,9 +64,10 @@ class _TabGridScreenState extends State<TabGridScreen> {
         return Theme(
           data: isDark ? ThemeData.dark() : ThemeData.light(),
           child: Scaffold(
-            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[100],
+            backgroundColor: isDark ? const Color(0xFF09090B) : Colors.white,
             appBar: AppBar(
-              backgroundColor: isDark ? const Color(0xFF121212) : Colors.white,
+              backgroundColor: isDark ? const Color(0xFF09090B) : Colors.white,
+              foregroundColor: isDark ? Colors.white : const Color(0xFF09090B),
               elevation: 1,
               title: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -110,7 +111,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                       value: 'sleep_all',
                       child: Row(
                         children: [
-                          Icon(Icons.ac_unit_rounded, size: 16, color: Colors.cyan),
+                          Icon(Icons.ac_unit_rounded, size: 16, color: Color(0xFF10B981)),
                           SizedBox(width: 8),
                           Text('Sleep all inactive tabs'),
                         ],
@@ -230,15 +231,15 @@ class _TabGridScreenState extends State<TabGridScreen> {
                           margin: const EdgeInsets.fromLTRB(14, 4, 14, 4),
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF0F9FF),
+                            color: isDark ? const Color(0xFF14241B) : const Color(0xFFF0FDF4),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: const Color(0xFF38BDF8).withOpacity(0.3),
+                              color: const Color(0xFF10B981).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.ac_unit_rounded, size: 15, color: Color(0xFF0284C7)),
+                              const Icon(Icons.ac_unit_rounded, size: 15, color: Color(0xFF10B981)),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -248,7 +249,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
-                                    color: isDark ? Colors.white70 : const Color(0xFF0369A1),
+                                    color: isDark ? Colors.white70 : const Color(0xFF059669),
                                   ),
                                 ),
                               ),
@@ -342,7 +343,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                     label: const Text('Close All'),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle, size: 36, color: Colors.blueAccent),
+                    icon: const Icon(Icons.add_circle, size: 36, color: Color(0xFF10B981)),
                     onPressed: () {
                       manager.openNewTab('prime://newtab', incognito: _showingIncognito);
                       Navigator.pop(context);
@@ -421,7 +422,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.public, size: 18, color: isDark ? Colors.cyanAccent : Colors.blueAccent),
+                  const Icon(Icons.public, size: 18, color: Color(0xFF10B981)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -432,12 +433,12 @@ class _TabGridScreenState extends State<TabGridScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.withOpacity(0.12),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
                       '${tabsInGroup.length} ${tabsInGroup.length == 1 ? 'tab' : 'tabs'}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                     ),
                   ),
                 ],
@@ -482,7 +483,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.redAccent.withValues(alpha: 0.9),
+        color: const Color(0xFF18181B),
         borderRadius: BorderRadius.circular(16),
       ),
       alignment: isStart ? Alignment.centerLeft : Alignment.centerRight,
@@ -646,15 +647,15 @@ class _TabGridScreenState extends State<TabGridScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? Colors.blueAccent
+                ? const Color(0xFF10B981)
                 : (isPinned
-                    ? Colors.amber.withOpacity(0.8)
-                    : (isFrozen ? Colors.cyan.withOpacity(0.6) : Colors.transparent)),
+                    ? const Color(0xFF10B981).withValues(alpha: 0.8)
+                    : (isFrozen ? const Color(0xFF10B981).withValues(alpha: 0.4) : Colors.transparent)),
             width: isSelected ? 2.5 : (isPinned || isFrozen ? 1.5 : 1),
           ),
           boxShadow: [
             BoxShadow(
-              color: isPinned ? Colors.amber.withOpacity(0.12) : Colors.black.withOpacity(0.08),
+              color: isPinned ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -677,7 +678,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                         ? Icons.ac_unit_rounded
                         : (_showingIncognito ? Icons.security : Icons.public),
                     size: 15,
-                    color: isFrozen ? Colors.cyan : Colors.blueAccent,
+                    color: isFrozen ? const Color(0xFF10B981) : const Color(0xFF10B981),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
@@ -699,7 +700,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                       child: Icon(
                         isPinned ? Icons.push_pin : Icons.push_pin_outlined,
                         size: 16,
-                        color: isPinned ? Colors.amber : (isDark ? Colors.white38 : Colors.grey[500]),
+                        color: isPinned ? const Color(0xFF10B981) : (isDark ? Colors.white38 : Colors.grey[500]),
                       ),
                     ),
                   ),
@@ -727,7 +728,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: isFrozen
-                          ? (isDark ? const Color(0xFF0F2333) : const Color(0xFFE0F2FE))
+                          ? (isDark ? const Color(0xFF14241B) : const Color(0xFFF0FDF4))
                           : (isDark ? const Color(0xFF202020) : Colors.grey[50]),
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -739,7 +740,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                               ? Icons.bedtime_rounded
                               : (_showingIncognito ? Icons.security : Icons.language),
                           size: 34,
-                          color: isFrozen ? Colors.cyan : Colors.grey[400],
+                          color: isFrozen ? const Color(0xFF10B981) : Colors.grey[400],
                         ),
                         const SizedBox(height: 6),
                         if (isFrozen)
@@ -748,7 +749,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: Colors.cyan,
+                              color: Color(0xFF10B981),
                             ),
                           ),
                         Padding(
@@ -760,7 +761,7 @@ class _TabGridScreenState extends State<TabGridScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 10,
-                              color: isFrozen ? Colors.cyan[700] : Colors.grey[600],
+                              color: isFrozen ? const Color(0xFF10B981) : Colors.grey[600],
                             ),
                           ),
                         ),
@@ -775,17 +776,17 @@ class _TabGridScreenState extends State<TabGridScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.amber,
+                          color: const Color(0xFF10B981),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.push_pin, size: 10, color: Colors.black87),
+                            Icon(Icons.push_pin, size: 10, color: Colors.white),
                             SizedBox(width: 2),
                             Text(
                               'PINNED',
-                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ],
                         ),
@@ -799,13 +800,13 @@ class _TabGridScreenState extends State<TabGridScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.cyan.withOpacity(0.2),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.cyan.withOpacity(0.5)),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
                         ),
                         child: const Text(
                           '42 MB SAVED',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.cyan),
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF10B981)),
                         ),
                       ),
                     ),
@@ -835,16 +836,16 @@ class _TabGridScreenState extends State<TabGridScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.blueAccent
-              : (isDark ? const Color(0xFF2A2A2A) : Colors.white),
+              ? const Color(0xFF10B981)
+              : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : (isDark ? Colors.white12 : Colors.grey[300]!),
+            color: isSelected ? const Color(0xFF10B981) : (isDark ? Colors.white12 : Colors.grey[300]!),
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.3),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -885,21 +886,21 @@ class _TabGridScreenState extends State<TabGridScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? Colors.blueAccent.withOpacity(0.2) : Colors.transparent,
+          color: isActive ? const Color(0xFF10B981).withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? Colors.blueAccent : Colors.grey.withOpacity(0.3),
+            color: isActive ? const Color(0xFF10B981) : Colors.grey.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: isActive ? Colors.blueAccent : Colors.grey),
+            Icon(icon, size: 16, color: isActive ? const Color(0xFF10B981) : Colors.grey),
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? Colors.blueAccent : Colors.grey,
+                color: isActive ? const Color(0xFF10B981) : Colors.grey,
                 fontSize: 13,
               ),
             ),

@@ -42,8 +42,10 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
       return url.contains(cleanQuery) || title.contains(cleanQuery);
     }).take(cleanQuery.isEmpty ? 4 : 3).toList();
 
+    final isDark = isIncognito || Theme.of(context).brightness == Brightness.dark;
+
     return Material(
-      color: isIncognito ? const Color(0xFF181818) : Colors.white,
+      color: isDark ? const Color(0xFF09090B) : Colors.white,
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
@@ -51,10 +53,10 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
             if (cleanQuery.isNotEmpty) ...[
               _buildSuggestionTile(
                 icon: Icons.search_rounded,
-                iconColor: Colors.blueAccent,
+                iconColor: const Color(0xFF10B981),
                 title: query.trim(),
                 subtitle: 'Search web for "$query"',
-                isDark: isIncognito,
+                isDark: isDark,
                 onTap: () => onSelect(query.trim()),
                 onQuickFill: () => onQuickFill(query.trim()),
               ),
@@ -74,18 +76,18 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.8,
-                        color: isIncognito ? Colors.white54 : Colors.grey[600],
+                        color: isDark ? Colors.white54 : Colors.grey[600],
                       ),
                     ),
                     if (cleanQuery.isEmpty)
                       GestureDetector(
                         onTap: () => browserManager.clearSearchHistory(),
-                        child: Text(
+                        child: const Text(
                           'Clear All',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: isIncognito ? Colors.purpleAccent : Colors.blueAccent,
+                            color: Color(0xFF10B981),
                           ),
                         ),
                       ),
@@ -95,9 +97,9 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
               ...searchHistory.map((item) {
                 return _buildSuggestionTile(
                   icon: Icons.history_rounded,
-                  iconColor: isIncognito ? Colors.white54 : Colors.grey[600]!,
+                  iconColor: isDark ? Colors.white54 : Colors.grey[600]!,
                   title: item,
-                  isDark: isIncognito,
+                  isDark: isDark,
                   onTap: () => onSelect(item),
                   onQuickFill: () => onQuickFill(item),
                   onDelete: () => browserManager.removeSearchHistory(item),
@@ -116,17 +118,17 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.8,
-                    color: isIncognito ? Colors.white54 : Colors.grey[600],
+                    color: isDark ? Colors.white54 : Colors.grey[600],
                   ),
                 ),
               ),
               ...matchingBookmarks.map((b) {
                 return _buildSuggestionTile(
                   icon: b.isCollection ? Icons.collections_bookmark_rounded : Icons.star_rounded,
-                  iconColor: b.isCollection ? Colors.purpleAccent : Colors.amber,
+                  iconColor: const Color(0xFF10B981),
                   title: b.title,
                   subtitle: b.url,
-                  isDark: isIncognito,
+                  isDark: isDark,
                   onTap: () => onSelect(b.url),
                   onQuickFill: () => onQuickFill(b.url),
                 );
@@ -144,7 +146,7 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.8,
-                    color: isIncognito ? Colors.white54 : Colors.grey[600],
+                    color: isDark ? Colors.white54 : Colors.grey[600],
                   ),
                 ),
               ),
@@ -153,10 +155,10 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
                 final url = h['url'] ?? '';
                 return _buildSuggestionTile(
                   icon: Icons.public_rounded,
-                  iconColor: Colors.teal,
+                  iconColor: const Color(0xFF10B981),
                   title: title,
                   subtitle: url,
-                  isDark: isIncognito,
+                  isDark: isDark,
                   onTap: () => onSelect(url),
                   onQuickFill: () => onQuickFill(url),
                 );

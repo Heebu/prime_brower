@@ -217,7 +217,7 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
                     ],
                     border: Border.all(
                       color: _thresholdReached || _isRefreshing
-                          ? (isDark ? Colors.purpleAccent : Colors.blueAccent)
+                          ? const Color(0xFF10B981)
                           : (isDark ? Colors.white24 : Colors.black12),
                       width: 1.5,
                     ),
@@ -229,7 +229,7 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
                         Icons.refresh_rounded,
                         size: 22,
                         color: _thresholdReached || _isRefreshing
-                            ? (isDark ? Colors.purpleAccent : Colors.blueAccent)
+                            ? const Color(0xFF10B981)
                             : (isDark ? Colors.white70 : Colors.black54),
                       ),
                     ),

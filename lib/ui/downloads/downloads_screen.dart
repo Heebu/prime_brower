@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/download_item.dart';
 import '../../services/download_service.dart';
-import '../../core/design_system/animated_pressable.dart';
 
 class DownloadsScreen extends StatefulWidget {
   final DownloadService downloadService;
@@ -49,16 +48,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
   }
 
   Color _getFileColor(DownloadItem item) {
-    switch (item.fileCategory) {
-      case 'Documents':
-        return Colors.blue;
-      case 'Media':
-        return Colors.purple;
-      case 'Archives':
-        return Colors.orange;
-      default:
-        return Colors.blueGrey;
-    }
+    return const Color(0xFF10B981);
   }
 
   @override
@@ -89,8 +79,8 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
             bottom: TabBar(
               controller: _tabController,
               isScrollable: false,
-              indicatorColor: Colors.blueAccent,
-              labelColor: Colors.blueAccent,
+              indicatorColor: const Color(0xFF10B981),
+              labelColor: const Color(0xFF10B981),
               unselectedLabelColor: Colors.grey,
               tabs: _categories.map((c) => Tab(text: c)).toList(),
             ),
@@ -117,7 +107,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.8,
-                          color: Colors.blueAccent,
+                          color: Color(0xFF10B981),
                         ),
                       ),
                     ),
@@ -169,10 +159,10 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withOpacity(0.12),
+                    color: const Color(0xFF10B981).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.downloading_rounded, color: Colors.blueAccent, size: 24),
+                  child: const Icon(Icons.downloading_rounded, color: Color(0xFF10B981), size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -194,7 +184,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.redAccent),
+                  icon: const Icon(Icons.close_rounded, color: Colors.grey),
                   tooltip: 'Cancel download',
                   onPressed: () => widget.downloadService.cancelDownload(item.id),
                 ),
@@ -207,7 +197,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                 value: item.totalBytes > 0 ? item.progress : null,
                 minHeight: 6,
                 backgroundColor: Colors.grey[200],
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
               ),
             ),
           ],
@@ -218,7 +208,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
 
   Widget _buildCompletedDownloadTile(DownloadItem item) {
     final isSuccess = item.status == DownloadStatus.completed;
-    final iconColor = isSuccess ? _getFileColor(item) : Colors.red;
+    final iconColor = isSuccess ? _getFileColor(item) : Colors.grey;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -261,7 +251,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                 const SizedBox(width: 6),
                 Text(
                   '• ${item.status.name}',
-                  style: const TextStyle(fontSize: 12, color: Colors.redAccent, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold),
                 ),
               ],
             ],
@@ -277,7 +267,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
                 onPressed: () => widget.downloadService.shareFile(item),
               ),
               IconButton(
-                icon: const Icon(Icons.open_in_new_rounded, size: 20, color: Colors.blueAccent),
+                icon: const Icon(Icons.open_in_new_rounded, size: 20, color: Color(0xFF10B981)),
                 tooltip: 'Open',
                 onPressed: () => widget.downloadService.openFile(item),
               ),
@@ -314,13 +304,13 @@ class _DownloadsScreenState extends State<DownloadsScreen> with SingleTickerProv
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.08),
+              color: const Color(0xFF10B981).withOpacity(0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.download_done_rounded,
               size: 56,
-              color: Colors.blueAccent,
+              color: Color(0xFF10B981),
             ),
           ),
           const SizedBox(height: 20),

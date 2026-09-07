@@ -19,14 +19,13 @@ class BannerSimulatorSheet extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Material(
-      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? const Color(0xFF09090B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      clipBehavior: Clip.antiAlias,
       child: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +35,7 @@ class BannerSimulatorSheet extends StatelessWidget {
                 child: Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: isDark ? Colors.white24 : Colors.black12,
                     borderRadius: BorderRadius.circular(2),
@@ -50,12 +49,12 @@ class BannerSimulatorSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.withValues(alpha: 0.15),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.announcement_rounded,
-                      color: Colors.blueAccent,
+                      color: Color(0xFF10B981),
                       size: 24,
                     ),
                   ),
@@ -299,7 +298,7 @@ class BannerSimulatorSheet extends StatelessWidget {
 
                   // Clear All Banners
                   ActionChip(
-                    avatar: const Icon(Icons.clear_all_rounded, size: 16, color: Colors.blueGrey),
+                    avatar: const Icon(Icons.clear_all_rounded, size: 16, color: Color(0xFF10B981)),
                     label: const Text('Clear All Banners'),
                     onPressed: () {
                       ConnectivityBannerService.instance.clearBanners(activeTabId);

@@ -57,7 +57,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.78,
       child: Material(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? const Color(0xFF09090B) : Colors.white,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
@@ -71,7 +71,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[400],
+                color: isDark ? Colors.white24 : Colors.grey[400],
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -84,7 +84,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.cloud_sync, color: Colors.blueAccent),
+                      Icon(Icons.cloud_sync, color: Color(0xFF10B981)),
                       SizedBox(width: 8),
                       Text(
                         'Prime Cloud Sync',
@@ -123,7 +123,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                     title: const Text('Bookmarks & Collections'),
                     subtitle: const Text('Keep saved pages up to date across devices'),
                     value: _syncBookmarks,
-                    activeColor: Colors.blueAccent,
+                    activeColor: const Color(0xFF10B981),
                     onChanged: isAuthenticated
                         ? (val) => setState(() => _syncBookmarks = val)
                         : null,
@@ -132,7 +132,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                     title: const Text('Open Tabs Mirroring'),
                     subtitle: const Text('View and access open tabs from other devices'),
                     value: _syncTabs,
-                    activeColor: Colors.blueAccent,
+                    activeColor: const Color(0xFF10B981),
                     onChanged: isAuthenticated
                         ? (val) => setState(() => _syncTabs = val)
                         : null,
@@ -143,7 +143,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                   // Tabs From Other Devices
                   const Row(
                     children: [
-                      Icon(Icons.devices, size: 18, color: Colors.blueAccent),
+                      Icon(Icons.devices, size: 18, color: Color(0xFF10B981)),
                       SizedBox(width: 8),
                       Text(
                         'Tabs from Other Devices',
@@ -236,16 +236,16 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[50],
+        color: isDark ? const Color(0xFF18181B) : Colors.grey[50],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
       ),
       child: Column(
         children: [
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: const Color(0xFF10B981),
                 child: Text(
                   name.isNotEmpty ? name[0].toUpperCase() : 'U',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -258,7 +258,11 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : const Color(0xFF09090B),
+                      ),
                     ),
                     Text(
                       email,
@@ -268,7 +272,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.logout, size: 20, color: Colors.redAccent),
+                icon: Icon(Icons.logout, size: 20, color: isDark ? Colors.white70 : Colors.black87),
                 tooltip: 'Sign Out',
                 onPressed: () async {
                   await widget.authService.signOut();
@@ -283,7 +287,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.check_circle, size: 14, color: Colors.green),
+                  const Icon(Icons.check_circle, size: 14, color: Color(0xFF10B981)),
                   const SizedBox(width: 4),
                   Text(
                     'Syncing Active',
@@ -297,6 +301,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
               ),
               TextButton.icon(
                 onPressed: _syncNow,
+                style: TextButton.styleFrom(foregroundColor: const Color(0xFF10B981)),
                 icon: const Icon(Icons.refresh, size: 14),
                 label: const Text('Sync Now', style: TextStyle(fontSize: 12)),
               ),
@@ -333,7 +338,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 6),
               child: ExpansionTile(
-                leading: const Icon(Icons.laptop_chromebook, color: Colors.blueAccent),
+                leading: const Icon(Icons.laptop_chromebook, color: Color(0xFF10B981)),
                 title: Text(dev.deviceName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 subtitle: Text('${dev.tabs.length} tabs open', style: const TextStyle(fontSize: 11)),
                 children: dev.tabs.map((tab) {

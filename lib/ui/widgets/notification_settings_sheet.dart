@@ -31,7 +31,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
       animation: _service,
       builder: (context, _) {
         return Material(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          color: isDark ? const Color(0xFF09090B) : Colors.white,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -65,12 +65,12 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.15),
+                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.notifications_active_rounded,
-                            color: Colors.amber,
+                            color: Color(0xFF10B981),
                             size: 24,
                           ),
                         ),
@@ -105,7 +105,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
                     child: Text(
-                      'ALERT PREFERENCES',
+                       'ALERT PREFERENCES',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -117,41 +117,41 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
 
                   // News Notifications
                   SwitchListTile(
-                    secondary: const Icon(Icons.newspaper_rounded, color: Colors.blueAccent),
+                    secondary: const Icon(Icons.newspaper_rounded, color: Color(0xFF10B981)),
                     title: const Text('News & Breaking Stories'),
                     subtitle: const Text('Daily headlines and personalized articles'),
                     value: _service.newsEnabled,
-                    activeThumbColor: Colors.blueAccent,
+                    activeThumbColor: const Color(0xFF10B981),
                     onChanged: (_) => _service.toggleNewsNotifications(),
                   ),
 
                   // Advert Notifications
                   SwitchListTile(
-                    secondary: const Icon(Icons.campaign_rounded, color: Colors.purpleAccent),
+                    secondary: const Icon(Icons.campaign_rounded, color: Color(0xFF10B981)),
                     title: const Text('Promotions & Adverts'),
                     subtitle: const Text('Special offers, partner discounts and sponsor highlights'),
                     value: _service.advertsEnabled,
-                    activeThumbColor: Colors.purpleAccent,
+                    activeThumbColor: const Color(0xFF10B981),
                     onChanged: (_) => _service.toggleAdvertNotifications(),
                   ),
 
                   // Download Complete Notifications
                   SwitchListTile(
-                    secondary: const Icon(Icons.download_done_rounded, color: Colors.green),
+                    secondary: const Icon(Icons.download_done_rounded, color: Color(0xFF10B981)),
                     title: const Text('Download Complete Alerts'),
                     subtitle: const Text('Heads-up notification when a file finishes downloading'),
                     value: _service.downloadsEnabled,
-                    activeThumbColor: Colors.green,
+                    activeThumbColor: const Color(0xFF10B981),
                     onChanged: (_) => _service.toggleDownloadNotifications(),
                   ),
 
                   // Background Page Load Notifications
                   SwitchListTile(
-                    secondary: const Icon(Icons.tab_unselected_rounded, color: Colors.deepOrangeAccent),
+                    secondary: const Icon(Icons.tab_unselected_rounded, color: Color(0xFF10B981)),
                     title: const Text('Background Page Ready Alerts'),
                     subtitle: const Text('Notify when a tab finishes loading while browser is minimized'),
                     value: _service.backgroundPageLoadsEnabled,
-                    activeThumbColor: Colors.deepOrangeAccent,
+                    activeThumbColor: const Color(0xFF10B981),
                     onChanged: (_) => _service.toggleBackgroundPageLoads(),
                   ),
 
@@ -190,7 +190,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                       runSpacing: 8,
                       children: [
                         ActionChip(
-                          avatar: const Icon(Icons.newspaper, size: 16, color: Colors.blueAccent),
+                          avatar: const Icon(Icons.newspaper, size: 16, color: Color(0xFF10B981)),
                           label: const Text('Test News Alert'),
                           onPressed: () {
                             _service.showNewsNotification(
@@ -202,7 +202,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                           },
                         ),
                         ActionChip(
-                          avatar: const Icon(Icons.campaign, size: 16, color: Colors.purpleAccent),
+                          avatar: const Icon(Icons.campaign, size: 16, color: Color(0xFF10B981)),
                           label: const Text('Test Advert Alert'),
                           onPressed: () {
                             _service.showAdvertNotification(
@@ -214,7 +214,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                           },
                         ),
                         ActionChip(
-                          avatar: const Icon(Icons.download_done, size: 16, color: Colors.green),
+                          avatar: const Icon(Icons.download_done, size: 16, color: Color(0xFF10B981)),
                           label: const Text('Test Download Alert'),
                           onPressed: () {
                             _service.showDownloadCompleteNotification(
@@ -226,7 +226,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                           },
                         ),
                         ActionChip(
-                          avatar: const Icon(Icons.tab_unselected, size: 16, color: Colors.deepOrangeAccent),
+                          avatar: const Icon(Icons.tab_unselected, size: 16, color: Color(0xFF10B981)),
                           label: const Text('Test Background Load'),
                           onPressed: () {
                             _service.showBackgroundPageLoadedNotification(
@@ -266,23 +266,19 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                       itemBuilder: (context, index) {
                         final alert = _service.recentNotifications[index];
                         IconData alertIcon;
-                        Color alertColor;
+                        const alertColor = Color(0xFF10B981);
                         switch (alert.type) {
                           case NotificationType.news:
                             alertIcon = Icons.newspaper;
-                            alertColor = Colors.blueAccent;
                             break;
                           case NotificationType.advert:
                             alertIcon = Icons.campaign;
-                            alertColor = Colors.purpleAccent;
                             break;
                           case NotificationType.download:
                             alertIcon = Icons.download_done;
-                            alertColor = Colors.green;
                             break;
                           case NotificationType.backgroundPage:
                             alertIcon = Icons.tab_unselected;
-                            alertColor = Colors.deepOrangeAccent;
                             break;
                         }
 

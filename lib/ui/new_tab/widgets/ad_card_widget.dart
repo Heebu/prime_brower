@@ -30,15 +30,15 @@ class AdCardWidget extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1A24) : const Color(0xFFF1F5F9),
+          color: isDark ? const Color(0xFF141416) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: const Color(0xFF3B82F6).withValues(alpha: 0.25),
+            color: const Color(0xFF10B981).withValues(alpha: 0.25),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF3B82F6).withValues(alpha: isDark ? 0.15 : 0.06),
+              color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.15 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -53,7 +53,7 @@ class AdCardWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Text(
@@ -61,7 +61,7 @@ class AdCardWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2563EB),
+                      color: Color(0xFF10B981),
                       letterSpacing: 0.4,
                     ),
                   ),
@@ -75,11 +75,11 @@ class AdCardWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white60 : Colors.blueGrey[700],
+                      color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
                 ),
-                const Icon(Icons.info_outline_rounded, size: 14, color: Colors.blueGrey),
+                const Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey),
               ],
             ),
             const SizedBox(height: 10),
@@ -92,7 +92,7 @@ class AdCardWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                color: isDark ? Colors.white : const Color(0xFF09090B),
               ),
             ),
             const SizedBox(height: 4),
@@ -115,7 +115,7 @@ class AdCardWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                      colors: [Color(0xFF059669), Color(0xFF10B981)],
                     ),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -151,15 +151,15 @@ class AdCardWidget extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF221C14) : const Color(0xFFFFFBEB),
+          color: isDark ? const Color(0xFF141416) : Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+            color: const Color(0xFF10B981).withValues(alpha: 0.3),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.15 : 0.06),
+              color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.15 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -174,7 +174,7 @@ class AdCardWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD97706).withValues(alpha: 0.18),
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -182,7 +182,7 @@ class AdCardWidget extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFB45309),
+                      color: Color(0xFF10B981),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -196,11 +196,11 @@ class AdCardWidget extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.amber[200] : const Color(0xFF92400E),
+                      color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
                 ),
-                const Icon(Icons.verified_rounded, size: 14, color: Color(0xFFF59E0B)),
+                const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
               ],
             ),
             const SizedBox(height: 10),
@@ -213,7 +213,7 @@ class AdCardWidget extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF451A03),
+                color: isDark ? Colors.white : const Color(0xFF09090B),
               ),
             ),
             const SizedBox(height: 4),
@@ -223,7 +223,7 @@ class AdCardWidget extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
-                color: isDark ? Colors.white70 : const Color(0xFF78350F),
+                color: isDark ? Colors.white70 : Colors.black87,
               ),
             ),
             const SizedBox(height: 12),
@@ -243,7 +243,7 @@ class AdCardWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      colors: [Color(0xFF059669), Color(0xFF10B981)],
                     ),
                     borderRadius: BorderRadius.circular(20),
                   ),

@@ -70,7 +70,7 @@ class _FindInPageBarState extends State<FindInPageBar> {
 
     return Material(
       elevation: 6,
-      color: isDark ? const Color(0xFF242424) : Colors.white,
+      color: isDark ? const Color(0xFF09090B) : Colors.white,
       child: Container(
         height: 50,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -81,7 +81,7 @@ class _FindInPageBarState extends State<FindInPageBar> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, size: 20, color: Colors.blueAccent),
+            const Icon(Icons.search, size: 20, color: Color(0xFF10B981)),
             const SizedBox(width: 8),
             Expanded(
               child: TextField(
@@ -103,7 +103,7 @@ class _FindInPageBarState extends State<FindInPageBar> {
                 _matchCount > 0 ? 'Found' : 'No matches',
                 style: TextStyle(
                   fontSize: 12,
-                  color: _matchCount > 0 ? Colors.green : Colors.redAccent,
+                  color: _matchCount > 0 ? const Color(0xFF10B981) : Colors.grey,
                   fontWeight: FontWeight.w500,
                 ),
               ),

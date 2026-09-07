@@ -60,9 +60,14 @@ class BookmarksScreen extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = list[index];
         return ListTile(
-          leading: const CircleAvatar(
-            backgroundColor: Color(0xFFE3F2FD),
-            child: Icon(Icons.public, color: Colors.blueAccent),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.public, color: Color(0xFF10B981), size: 20),
           ),
           title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(item.url, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -107,7 +112,7 @@ class BookmarksScreen extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: ListTile(
-            leading: const Icon(Icons.folder, color: Colors.amber),
+            leading: const Icon(Icons.folder, color: Color(0xFF10B981)),
             title: Text(item.title),
             subtitle: Text(item.url),
             trailing: IconButton(

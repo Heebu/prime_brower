@@ -34,21 +34,21 @@ class BrowserApp extends StatelessWidget {
           theme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.light,
-            colorSchemeSeed: const Color(0xFF2563EB),
-            scaffoldBackgroundColor: const Color(0xFFF8F9FD),
+            colorSchemeSeed: const Color(0xFF10B981),
+            scaffoldBackgroundColor: const Color(0xFFFFFFFF),
             appBarTheme: const AppBarTheme(
               backgroundColor: Colors.white,
-              foregroundColor: Color(0xFF1E293B),
+              foregroundColor: Color(0xFF09090B),
               elevation: 0,
             ),
           ),
           darkTheme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
-            colorSchemeSeed: const Color(0xFF2563EB),
-            scaffoldBackgroundColor: const Color(0xFF121212),
+            colorSchemeSeed: const Color(0xFF10B981),
+            scaffoldBackgroundColor: const Color(0xFF09090B),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF1A1A1A),
+              backgroundColor: Color(0xFF09090B),
               foregroundColor: Colors.white,
               elevation: 0,
             ),

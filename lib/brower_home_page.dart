@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'models/web_tab.dart';
 import 'services/browser_manager.dart';
 import 'services/shields_service.dart';
 import 'services/ai_copilot_service.dart';
@@ -19,7 +18,6 @@ import 'ui/productivity/find_in_page_bar.dart';
 import 'ui/sync/cloud_sync_sheet.dart';
 import 'ui/downloads/downloads_screen.dart';
 import 'ui/shields/shields_details_sheet.dart';
-import 'core/design_system/responsive_layout.dart';
 
 class BrowserHomePage extends StatefulWidget {
   const BrowserHomePage({Key? key}) : super(key: key);
@@ -225,7 +223,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
             }
           },
           child: Scaffold(
-            backgroundColor: isDark ? const Color(0xFF121212) : Colors.grey[100],
+            backgroundColor: isDark ? const Color(0xFF09090B) : Colors.white,
             appBar: OmniboxAppBar(
               key: ValueKey('omnibox_${currentTab?.id}_$isIncognito'),
               browserManager: _browserManager,
@@ -271,8 +269,8 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
                         value: currentTab.progress / 100.0,
                         minHeight: 2.5,
                         backgroundColor: Colors.transparent,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF10B981),
                         ),
                       ),
 
@@ -293,12 +291,16 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
                                     isIncognito ? 'No open incognito tabs' : 'No open tabs',
                                     style: TextStyle(
                                       fontSize: 18,
-                                      color: isIncognito ? Colors.white70 : Colors.black54,
+                                      color: isIncognito ? Colors.white70 : Colors.black87,
                                     ),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
                                     onPressed: () => _browserManager.openNewTab('prime://newtab'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF10B981),
+                                      foregroundColor: Colors.white,
+                                    ),
                                     icon: const Icon(Icons.add),
                                     label: Text(isIncognito ? 'Open Incognito Tab' : 'Open New Tab'),
                                   ),

@@ -145,19 +145,19 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
         case 0:
           height = 36.0;
           width = 24.0;
-          color = const Color(0xFFEF4444); // Red glitch pillar
+          color = const Color(0xFF10B981); // Emerald pillar
           label = 'DNS';
           break;
         case 1:
           height = 50.0;
           width = 28.0;
-          color = const Color(0xFFF59E0B); // Amber firewall
+          color = const Color(0xFF059669); // Dark emerald firewall
           label = '404';
           break;
         default:
           height = 30.0;
           width = 38.0;
-          color = const Color(0xFF8B5CF6); // Purple glitch hurdle
+          color = const Color(0xFF00E676); // Vibrant cyber hurdle
           label = 'ERR';
           break;
       }
@@ -230,7 +230,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Deep Cyber Navy
+      backgroundColor: const Color(0xFF000000), // Pure Black Arena
       body: SafeArea(
         child: Column(
           children: [
@@ -270,7 +270,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
                                     const Text(
                                       'PRIME CYBER RUNNER',
                                       style: TextStyle(
-                                        color: Color(0xFF38BDF8),
+                                        color: Color(0xFF10B981),
                                         fontSize: 12,
                                         fontWeight: FontWeight.w900,
                                         letterSpacing: 1.5,
@@ -298,7 +298,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
                                   child: Text(
                                     'HI: $_highScore',
                                     style: const TextStyle(
-                                      color: Color(0xFFFBBF24),
+                                      color: Color(0xFF10B981),
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: 'monospace',
@@ -319,14 +319,14 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
                               decoration: const BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    Color(0xFF38BDF8),
-                                    Color(0xFF818CF8),
-                                    Color(0xFFC084FC),
+                                    Color(0xFF059669),
+                                    Color(0xFF10B981),
+                                    Color(0xFF00E676),
                                   ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Color(0xFF38BDF8),
+                                    color: Color(0xFF10B981),
                                     blurRadius: 8,
                                     spreadRadius: 1,
                                   ),
@@ -399,11 +399,11 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
       width: 32,
       height: 36,
       decoration: BoxDecoration(
-        color: const Color(0xFF38BDF8),
+        color: const Color(0xFF10B981),
         borderRadius: BorderRadius.circular(8),
         boxShadow: const [
           BoxShadow(
-            color: Color(0xFF38BDF8),
+            color: Color(0xFF10B981),
             blurRadius: 12,
             spreadRadius: 2,
           ),
@@ -433,7 +433,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
                 width: 12,
                 height: 6,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF97316),
+                  color: Color(0xFF00E676),
                   borderRadius: BorderRadius.vertical(bottom: Radius.circular(6)),
                 ),
               ),
@@ -446,18 +446,18 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
   Widget _buildTopStatusBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: const Color(0xFF1E293B),
+      color: const Color(0xFF09090B),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: widget.isOnline ? Colors.green.withOpacity(0.2) : Colors.amber.withOpacity(0.2),
+              color: const Color(0xFF10B981).withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
               widget.isOnline ? Icons.wifi : Icons.wifi_off_rounded,
-              color: widget.isOnline ? Colors.greenAccent : const Color(0xFFF59E0B),
+              color: const Color(0xFF10B981),
               size: 16,
             ),
           ),
@@ -468,8 +468,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
               children: [
                 Text(
                   widget.isOnline ? 'Internet Restored' : 'Offline Mode',
-                  style: TextStyle(
-                    color: widget.isOnline ? Colors.greenAccent : Colors.white,
+                  style: const TextStyle(
+                    color: Color(0xFF10B981),
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -486,8 +486,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
           ElevatedButton.icon(
             onPressed: widget.onRetryConnection,
             style: ElevatedButton.styleFrom(
-              backgroundColor: widget.isOnline ? Colors.green : const Color(0xFF3B82F6),
-              foregroundColor: Colors.white,
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.black,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
@@ -505,12 +505,12 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A).withOpacity(0.9),
+          color: const Color(0xFF09090B).withOpacity(0.95),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
+          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF38BDF8).withOpacity(0.15),
+              color: const Color(0xFF10B981).withOpacity(0.15),
               blurRadius: 20,
             ),
           ],
@@ -518,7 +518,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.videogame_asset_rounded, color: Color(0xFF38BDF8), size: 48),
+            const Icon(Icons.videogame_asset_rounded, color: Color(0xFF10B981), size: 48),
             const SizedBox(height: 12),
             const Text(
               'PRIME CYBER RUNNER',
@@ -539,8 +539,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
             ElevatedButton(
               onPressed: _startGame,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF38BDF8),
-                foregroundColor: const Color(0xFF0F172A),
+                backgroundColor: const Color(0xFF10B981),
+                foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -559,12 +559,12 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
         margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF0F172A).withOpacity(0.95),
+          color: const Color(0xFF09090B).withOpacity(0.95),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5)),
+          border: Border.all(color: const Color(0xFF10B981).withOpacity(0.5)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFEF4444).withOpacity(0.2),
+              color: const Color(0xFF10B981).withOpacity(0.2),
               blurRadius: 24,
             ),
           ],
@@ -575,7 +575,7 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
             const Text(
               'CRASHED!',
               style: TextStyle(
-                color: Color(0xFFEF4444),
+                color: Color(0xFF10B981),
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.5,
@@ -610,8 +610,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
                 ElevatedButton.icon(
                   onPressed: _startGame,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF38BDF8),
-                    foregroundColor: const Color(0xFF0F172A),
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -630,12 +630,12 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: const BoxDecoration(
-        color: Color(0xFF0B1120),
+        color: Color(0xFF09090B),
         border: Border(top: BorderSide(color: Colors.white12)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.touch_app_rounded, color: Color(0xFF38BDF8), size: 18),
+          const Icon(Icons.touch_app_rounded, color: Color(0xFF10B981), size: 18),
           const SizedBox(width: 8),
           const Expanded(
             child: Text(
@@ -646,8 +646,8 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
           IconButton.filled(
             onPressed: _jump,
             style: IconButton.styleFrom(
-              backgroundColor: const Color(0xFF38BDF8),
-              foregroundColor: const Color(0xFF0F172A),
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.black,
             ),
             icon: const Icon(Icons.arrow_upward_rounded),
             tooltip: 'Jump',
@@ -681,7 +681,7 @@ class _CyberBackgroundPainter extends CustomPainter {
 
     // 2. Cyber Grid under ground
     final gridPaint = Paint()
-      ..color = const Color(0xFF1E293B)
+      ..color = const Color(0xFF18181B)
       ..strokeWidth = 1.0;
 
     final groundY = size.height - groundHeight;

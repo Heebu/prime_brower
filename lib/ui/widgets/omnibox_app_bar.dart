@@ -119,7 +119,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
           children: [
             Icon(
               isHttps ? Icons.lock : Icons.warning_amber_rounded,
-              color: isHttps ? Colors.green : Colors.orange,
+              color: isHttps ? const Color(0xFF10B981) : Colors.grey,
             ),
             const SizedBox(width: 8),
             Text(isHttps ? 'Connection is secure' : 'Not secure', style: const TextStyle(fontSize: 16)),
@@ -196,8 +196,12 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
         },
         child: AppBar(
           elevation: isFocused ? 2 : 0.5,
-          backgroundColor: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
-          foregroundColor: isIncognito ? Colors.white : Colors.black87,
+          backgroundColor: (isIncognito || Theme.of(context).brightness == Brightness.dark)
+              ? const Color(0xFF09090B)
+              : Colors.white,
+          foregroundColor: (isIncognito || Theme.of(context).brightness == Brightness.dark)
+              ? Colors.white
+              : const Color(0xFF09090B),
           titleSpacing: isFocused ? 0 : 8,
           leading: isFocused
               ? IconButton(
@@ -225,13 +229,13 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
             height: 42,
             margin: EdgeInsets.only(right: isFocused ? 12 : 0),
             decoration: BoxDecoration(
-              color: isIncognito
-                  ? (isFocused ? const Color(0xFF333333) : const Color(0xFF2C2C2C))
-                  : (isFocused ? Colors.grey[100] : Colors.grey[200]),
+              color: (isIncognito || Theme.of(context).brightness == Brightness.dark)
+                  ? (isFocused ? const Color(0xFF27272A) : const Color(0xFF18181B))
+                  : (isFocused ? const Color(0xFFF4F4F5) : const Color(0xFFE4E4E7)),
               borderRadius: BorderRadius.circular(24),
               border: isFocused
                   ? Border.all(
-                      color: isIncognito ? Colors.purpleAccent : Colors.blueAccent,
+                      color: const Color(0xFF10B981),
                       width: 1.5,
                     )
                   : null,
@@ -249,8 +253,8 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                               : (isHttps ? Icons.lock : Icons.info_outline)),
                       size: 18,
                       color: isNewTab
-                          ? (isIncognito ? Colors.white54 : Colors.grey[600])
-                          : (isHttps ? Colors.green : (isIncognito ? Colors.white70 : Colors.orange)),
+                          ? ((isIncognito || Theme.of(context).brightness == Brightness.dark) ? Colors.white54 : Colors.black54)
+                          : (isHttps ? const Color(0xFF10B981) : ((isIncognito || Theme.of(context).brightness == Brightness.dark) ? Colors.white70 : Colors.black87)),
                     ),
                     tooltip: isNewTab ? 'Search' : 'Site Information',
                     onPressed: isNewTab ? null : _showSecurityInfo,
@@ -258,7 +262,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                 else
                   const Padding(
                     padding: EdgeInsets.only(left: 12, right: 6),
-                    child: Icon(Icons.search, size: 20, color: Colors.blueAccent),
+                    child: Icon(Icons.search, size: 20, color: Color(0xFF10B981)),
                   ),
 
                 // Omnibox URL Input
@@ -312,20 +316,20 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.deepOrangeAccent.withValues(alpha: 0.15),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.shield, size: 13, color: Colors.deepOrangeAccent),
+                          const Icon(Icons.shield, size: 13, color: Color(0xFF10B981)),
                           const SizedBox(width: 3),
                           Text(
                             '${widget.shieldsService.blockedElementsCount}',
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.deepOrangeAccent,
+                              color: Color(0xFF10B981),
                             ),
                           ),
                         ],
@@ -350,7 +354,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.purple.withValues(alpha: 0.3),
+                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -396,8 +400,8 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                           top: 4,
                           child: Container(
                             padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
                               shape: BoxShape.circle,
                             ),
                             constraints: const BoxConstraints(minWidth: 16, minHeight: 16),

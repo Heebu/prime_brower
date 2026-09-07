@@ -19,8 +19,10 @@ class BottomNavBar extends StatelessWidget {
     final isIncognito = browserManager.isIncognito;
     final tabsCount = browserManager.currentTabs.length;
 
+    final isDark = isIncognito || Theme.of(context).brightness == Brightness.dark;
+
     return BottomAppBar(
-      color: isIncognito ? const Color(0xFF1A1A1A) : Colors.white,
+      color: isDark ? const Color(0xFF09090B) : Colors.white,
       elevation: 8,
       child: SizedBox(
         height: 52,
@@ -31,7 +33,7 @@ class BottomNavBar extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.arrow_back_ios_new, size: 20),
               tooltip: 'Back',
-              color: isIncognito ? Colors.white70 : null,
+              color: isDark ? Colors.white70 : Colors.black87,
               onPressed: tab == null
                   ? null
                   : () async {
@@ -42,7 +44,7 @@ class BottomNavBar extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios, size: 20),
               tooltip: 'Forward',
-              color: isIncognito ? Colors.white70 : null,
+              color: isDark ? Colors.white70 : Colors.black87,
               onPressed: tab == null
                   ? null
                   : () async {
@@ -53,7 +55,7 @@ class BottomNavBar extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.home_outlined, size: 24),
               tooltip: 'Home',
-              color: isIncognito ? Colors.white70 : null,
+              color: isDark ? Colors.white70 : Colors.black87,
               onPressed: () => browserManager.navigateCurrentTab('prime://newtab'),
             ),
             // Tab Switcher with live badge
@@ -63,7 +65,7 @@ class BottomNavBar extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.layers_outlined, size: 24),
                   tooltip: 'Tabs',
-                  color: isIncognito ? Colors.white70 : null,
+                  color: isDark ? Colors.white70 : Colors.black87,
                   onPressed: onOpenTabs,
                 ),
                 Positioned(
@@ -71,8 +73,8 @@ class BottomNavBar extends StatelessWidget {
                   top: 8,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -93,7 +95,7 @@ class BottomNavBar extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.more_vert, size: 24),
               tooltip: 'Menu',
-              color: isIncognito ? Colors.white70 : null,
+              color: isDark ? Colors.white70 : Colors.black87,
               onPressed: onOpenMenu,
             ),
           ],

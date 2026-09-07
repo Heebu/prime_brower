@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/speed_dial_item.dart';
-import '../../models/bookmark.dart';
 import '../../services/browser_manager.dart';
 import '../../services/shields_service.dart';
-import '../../services/feed_ad_service.dart';
 import '../../core/design_system/app_colors.dart';
 import '../../core/design_system/animated_pressable.dart';
 import '../../core/design_system/responsive_layout.dart';
@@ -133,7 +131,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                       title: title,
                       url: url,
                       iconData: Icons.language_rounded,
-                      color: Colors.blueAccent,
+                      color: const Color(0xFF10B981),
                       isCustom: true,
                     ),
                   );
@@ -192,7 +190,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: (isIncognito ? Colors.purple : const Color(0xFF6366F1)).withOpacity(0.35),
+                      color: const Color(0xFF10B981).withOpacity(0.35),
                       blurRadius: 18,
                       offset: const Offset(0, 6),
                     ),
@@ -264,7 +262,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                                     ? Icons.shield_rounded
                                     : (engine == 'Private Search' ? Icons.security : Icons.search),
                                 size: 18,
-                                color: Colors.blueAccent,
+                                color: const Color(0xFF10B981),
                               ),
                               const SizedBox(width: 8),
                               Text(engine, style: const TextStyle(fontSize: 13)),
@@ -330,9 +328,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
-                          ),
+                          gradient: AppColors.primeGreenGradient,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -366,15 +362,15 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
+                    color: isIncognito ? const Color(0xFF141416) : Colors.white,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.deepOrangeAccent.withOpacity(0.2),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.2),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.deepOrangeAccent.withOpacity(0.05),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.05),
                         blurRadius: 12,
                         offset: const Offset(0, 3),
                       ),
@@ -391,12 +387,12 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: Colors.deepOrangeAccent.withOpacity(0.12),
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Icon(
                                   Icons.shield_rounded,
-                                  color: Colors.deepOrangeAccent,
+                                  color: Color(0xFF10B981),
                                   size: 20,
                                 ),
                               ),
@@ -415,7 +411,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: widget.shieldsService.shieldsEnabled
-                                  ? Colors.green.withOpacity(0.12)
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.12)
                                   : Colors.grey.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -424,7 +420,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: widget.shieldsService.shieldsEnabled ? Colors.green : Colors.grey,
+                                color: widget.shieldsService.shieldsEnabled ? const Color(0xFF10B981) : Colors.grey,
                               ),
                             ),
                           ),
@@ -437,21 +433,21 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                             label: 'Trackers Blocked',
                             value: '$blockedCount',
                             icon: Icons.block_rounded,
-                            color: Colors.deepOrangeAccent,
+                            color: const Color(0xFF10B981),
                             isIncognito: isIncognito,
                           ),
                           _buildShieldStat(
                             label: 'Est. Data Saved',
                             value: '${dataSavedMb}MB',
                             icon: Icons.data_saver_on_rounded,
-                            color: Colors.blueAccent,
+                            color: const Color(0xFF10B981),
                             isIncognito: isIncognito,
                           ),
                           _buildShieldStat(
                             label: 'Time Saved',
                             value: '${timeSavedSec}s',
                             icon: Icons.timer_outlined,
-                            color: Colors.teal,
+                            color: const Color(0xFF10B981),
                             isIncognito: isIncognito,
                           ),
                         ],
@@ -610,13 +606,13 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: (b.isCollection ? Colors.purple : Colors.amber).withOpacity(0.15),
+                                  color: const Color(0xFF10B981).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
                                   b.isCollection ? Icons.collections_bookmark : Icons.bookmark_rounded,
                                   size: 16,
-                                  color: b.isCollection ? Colors.purple : Colors.amber,
+                                  color: const Color(0xFF10B981),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -667,13 +663,13 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
                           Icons.newspaper_rounded,
                           size: 16,
-                          color: Color(0xFF6366F1),
+                          color: Color(0xFF10B981),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -683,7 +679,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.8,
-                          color: isDark ? Colors.white70 : Colors.grey[800],
+                          color: isDark ? Colors.white70 : Colors.black87,
                         ),
                       ),
                     ],
@@ -706,7 +702,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white10 : Colors.grey[200],
+                        color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF4F4F5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -715,7 +711,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                           Icon(
                             Icons.shuffle_rounded,
                             size: 14,
-                            color: isDark ? Colors.white70 : const Color(0xFF4F46E5),
+                            color: isDark ? Colors.white70 : const Color(0xFF10B981),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -723,7 +719,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : const Color(0xFF4F46E5),
+                              color: isDark ? Colors.white70 : const Color(0xFF10B981),
                             ),
                           ),
                         ],
@@ -750,12 +746,12 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? const Color(0xFF6366F1)
-                                : (isDark ? Colors.white10 : Colors.white),
+                                ? const Color(0xFF10B981)
+                                : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected
-                                  ? const Color(0xFF6366F1)
+                                  ? const Color(0xFF10B981)
                                   : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
                             ),
                           ),
@@ -766,7 +762,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                               color: isSelected
                                   ? Colors.white
-                                  : (isDark ? Colors.white70 : Colors.grey[700]),
+                                  : (isDark ? Colors.white70 : Colors.grey[800]),
                             ),
                           ),
                         ),

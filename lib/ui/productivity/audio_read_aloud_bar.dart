@@ -93,7 +93,7 @@ class _AudioReadAloudBarState extends State<AudioReadAloudBar> with SingleTicker
       margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF222222) : Colors.white,
+        color: isDark ? const Color(0xFF09090B) : Colors.white,
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
@@ -115,7 +115,7 @@ class _AudioReadAloudBarState extends State<AudioReadAloudBar> with SingleTicker
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: const BoxDecoration(
-                color: Colors.blueAccent,
+                color: Color(0xFF10B981),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -148,7 +148,7 @@ class _AudioReadAloudBarState extends State<AudioReadAloudBar> with SingleTicker
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.blueAccent.withOpacity(0.12),
+                color: const Color(0xFF10B981).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -156,7 +156,7 @@ class _AudioReadAloudBarState extends State<AudioReadAloudBar> with SingleTicker
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blueAccent,
+                  color: Color(0xFF10B981),
                 ),
               ),
             ),
@@ -200,7 +200,7 @@ class _AudioReadAloudBarState extends State<AudioReadAloudBar> with SingleTicker
       width: 3,
       height: _isPlaying ? height.clamp(4.0, 22.0) : 4.0,
       decoration: BoxDecoration(
-        color: Colors.blueAccent,
+        color: const Color(0xFF10B981),
         borderRadius: BorderRadius.circular(2),
       ),
     );

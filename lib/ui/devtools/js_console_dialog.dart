@@ -64,7 +64,7 @@ class _JsConsoleDialogState extends State<JsConsoleDialog> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.terminal, color: Colors.blueAccent),
+                    Icon(Icons.terminal, color: Color(0xFF10B981)),
                     SizedBox(width: 8),
                     Text(
                       'JavaScript Console',
@@ -130,8 +130,8 @@ class _JsConsoleDialogState extends State<JsConsoleDialog> {
                                 fontFamily: 'monospace',
                                 fontSize: 12,
                                 color: isInput
-                                    ? Colors.lightBlueAccent
-                                    : (log.contains('Error') ? Colors.redAccent : Colors.lightGreenAccent),
+                                    ? const Color(0xFF10B981)
+                                    : (log.contains('Error') ? Colors.white70 : const Color(0xFF00E676)),
                               ),
                             ),
                           );
@@ -158,7 +158,7 @@ class _JsConsoleDialogState extends State<JsConsoleDialog> {
                 ElevatedButton(
                   onPressed: _isRunning ? null : () => _runScript(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
                   ),
                   child: _isRunning

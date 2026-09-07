@@ -168,7 +168,7 @@ class _ReaderModeScreenState extends State<ReaderModeScreen> {
           color: bg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.blueAccent : Colors.grey.shade400,
+            color: isSelected ? const Color(0xFF10B981) : Colors.grey.shade400,
             width: isSelected ? 2 : 1,
           ),
         ),

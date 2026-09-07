@@ -27,13 +27,15 @@ class ShieldsDetailsSheet extends StatelessWidget {
     final isWhitelisted = shieldsService.isSiteWhitelisted(host);
     final isShieldsActive = shieldsService.shieldsEnabled && !isWhitelisted;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnimatedBuilder(
       animation: shieldsService,
       builder: (context, _) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF09090B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: SafeArea(
@@ -48,7 +50,7 @@ class ShieldsDetailsSheet extends StatelessWidget {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: isDark ? Colors.white24 : Colors.grey[300],
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -61,30 +63,34 @@ class ShieldsDetailsSheet extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.deepOrangeAccent.withOpacity(0.12),
+                          color: const Color(0xFF10B981).withOpacity(0.12),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(Icons.shield_rounded, color: Colors.deepOrangeAccent, size: 28),
+                        child: const Icon(Icons.shield_rounded, color: Color(0xFF10B981), size: 28),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Prime Shields',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : const Color(0xFF09090B),
+                              ),
                             ),
                             Text(
                               'Deep Network AdBlocker & Anti-Tracker',
-                              style: TextStyle(fontSize: 12, color: Colors.black54),
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
                             ),
                           ],
                         ),
                       ),
                       Switch(
                         value: shieldsService.shieldsEnabled,
-                        activeColor: Colors.deepOrangeAccent,
+                        activeColor: const Color(0xFF10B981),
                         onChanged: (_) => shieldsService.toggleShields(),
                       ),
                     ],
@@ -95,17 +101,21 @@ class ShieldsDetailsSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: isShieldsActive ? Colors.green.withOpacity(0.06) : Colors.grey[100],
+                      color: isShieldsActive
+                          ? const Color(0xFF10B981).withOpacity(0.08)
+                          : (isDark ? const Color(0xFF18181B) : Colors.grey[100]),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isShieldsActive ? Colors.green.withOpacity(0.3) : Colors.grey[300]!,
+                        color: isShieldsActive
+                            ? const Color(0xFF10B981).withOpacity(0.3)
+                            : (isDark ? Colors.white12 : Colors.grey[300]!),
                       ),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           isShieldsActive ? Icons.verified_user_rounded : Icons.gpp_bad_outlined,
-                          color: isShieldsActive ? Colors.green : Colors.grey,
+                          color: isShieldsActive ? const Color(0xFF10B981) : Colors.grey,
                           size: 24,
                         ),
                         const SizedBox(width: 12),
@@ -117,13 +127,19 @@ class ShieldsDetailsSheet extends StatelessWidget {
                                 host,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : const Color(0xFF09090B),
+                                ),
                               ),
                               Text(
                                 isShieldsActive ? 'Shields UP on this site' : 'Shields DOWN on this site',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isShieldsActive ? Colors.green[700] : Colors.grey[700],
+                                  color: isShieldsActive
+                                      ? const Color(0xFF10B981)
+                                      : (isDark ? Colors.white60 : Colors.grey[700]),
                                 ),
                               ),
                             ],
@@ -134,6 +150,7 @@ class ShieldsDetailsSheet extends StatelessWidget {
                             shieldsService.toggleSiteExemption(host);
                             onReload();
                           },
+                          style: TextButton.styleFrom(foregroundColor: const Color(0xFF10B981)),
                           child: Text(isWhitelisted ? 'Enable' : 'Pause'),
                         ),
                       ],
@@ -148,14 +165,16 @@ class ShieldsDetailsSheet extends StatelessWidget {
                         label: 'Total Blocked',
                         value: '${shieldsService.blockedElementsCount}',
                         icon: Icons.block_rounded,
-                        color: Colors.deepOrangeAccent,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
                       ),
                       const SizedBox(width: 10),
                       _buildMetricTile(
                         label: 'Network Requests',
                         value: '${shieldsService.networkBlockedCount}',
                         icon: Icons.wifi_off_rounded,
-                        color: Colors.blueAccent,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
                       ),
                     ],
                   ),
@@ -166,14 +185,16 @@ class ShieldsDetailsSheet extends StatelessWidget {
                         label: 'Cosmetic Hidden',
                         value: '${shieldsService.cosmeticBlockedCount}',
                         icon: Icons.visibility_off_rounded,
-                        color: Colors.purple,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
                       ),
                       const SizedBox(width: 10),
                       _buildMetricTile(
                         label: 'Est. Data Saved',
                         value: '${shieldsService.estimatedDataSavedMb.toStringAsFixed(1)} MB',
                         icon: Icons.data_saver_on_rounded,
-                        color: Colors.teal,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
                       ),
                     ],
                   ),
@@ -191,20 +212,24 @@ class ShieldsDetailsSheet extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.grey[50],
+                        color: isDark ? const Color(0xFF18181B) : Colors.grey[50],
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
+                        border: Border.all(color: isDark ? Colors.white12 : Colors.grey[200]!),
                       ),
-                      child: const Column(
+                      child: Column(
                         children: [
-                          Icon(Icons.check_circle_outline_rounded, color: Colors.green, size: 36),
-                          SizedBox(height: 8),
+                          const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF10B981), size: 36),
+                          const SizedBox(height: 8),
                           Text(
                             'Clean Page',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: isDark ? Colors.white : const Color(0xFF09090B),
+                            ),
                           ),
-                          SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 4),
+                          const Text(
                             'No malicious trackers or ad calls intercepted yet.',
                             style: TextStyle(color: Colors.grey, fontSize: 11),
                           ),
@@ -222,26 +247,24 @@ class ShieldsDetailsSheet extends StatelessWidget {
                           margin: const EdgeInsets.only(bottom: 6),
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: isDark ? const Color(0xFF18181B) : Colors.grey[50],
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.grey[200]!),
+                            border: Border.all(color: isDark ? Colors.white12 : Colors.grey[200]!),
                           ),
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: req.category.contains('Social')
-                                      ? Colors.blue.withOpacity(0.12)
-                                      : Colors.deepOrangeAccent.withOpacity(0.12),
+                                  color: const Color(0xFF10B981).withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   req.category,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
-                                    color: req.category.contains('Social') ? Colors.blue : Colors.deepOrangeAccent,
+                                    color: Color(0xFF10B981),
                                   ),
                                 ),
                               ),
@@ -254,7 +277,11 @@ class ShieldsDetailsSheet extends StatelessWidget {
                                       req.domain,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 12,
+                                        color: isDark ? Colors.white : const Color(0xFF09090B),
+                                      ),
                                     ),
                                     Text(
                                       req.shortUrl,
@@ -288,14 +315,15 @@ class ShieldsDetailsSheet extends StatelessWidget {
     required String value,
     required IconData icon,
     required Color color,
+    required bool isDark,
   }) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.06),
+          color: isDark ? const Color(0xFF18181B) : color.withOpacity(0.06),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: isDark ? Colors.white12 : color.withOpacity(0.2)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +345,11 @@ class ShieldsDetailsSheet extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               label,
-              style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? Colors.white70 : Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

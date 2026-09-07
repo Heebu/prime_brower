@@ -69,8 +69,8 @@ class WebViewPage extends StatelessWidget {
                 value: tab.progress / 100.0,
                 minHeight: 3,
                 backgroundColor: Colors.transparent,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  browserManager.isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  Color(0xFF10B981),
                 ),
               ),
             ),

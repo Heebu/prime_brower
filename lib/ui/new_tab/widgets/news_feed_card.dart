@@ -16,20 +16,7 @@ class NewsFeedCard extends StatelessWidget {
   });
 
   Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'tech':
-        return const Color(0xFF0284C7);
-      case 'business':
-        return const Color(0xFFD97706);
-      case 'science':
-        return const Color(0xFF9333EA);
-      case 'sports':
-        return const Color(0xFF059669);
-      case 'world':
-        return const Color(0xFF4F46E5);
-      default:
-        return const Color(0xFF64748B);
-    }
+    return const Color(0xFF10B981);
   }
 
   IconData _getCategoryIcon(String category) {

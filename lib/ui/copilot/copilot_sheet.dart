@@ -95,7 +95,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
       builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.key, color: Colors.purple),
+            Icon(Icons.key, color: Color(0xFF10B981)),
             SizedBox(width: 8),
             Text('Pi AI Settings', style: TextStyle(fontSize: 16)),
           ],
@@ -133,7 +133,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
               widget.copilotService.setApiKey(controller.text);
               Navigator.pop(ctx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
             child: const Text('Save'),
           ),
         ],
@@ -148,7 +148,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        color: isDark ? const Color(0xFF09090B) : Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -191,7 +191,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
           Container(
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            color: isDark ? const Color(0xFF181818) : Colors.grey[100],
+            color: isDark ? const Color(0xFF121212) : const Color(0xFFF4F4F5),
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
@@ -222,8 +222,8 @@ class _CopilotSheetState extends State<CopilotSheet> {
                     ),
                     decoration: BoxDecoration(
                       color: isUser
-                          ? Colors.blueAccent
-                          : (isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF3F4F6)),
+                          ? const Color(0xFF10B981)
+                          : (isDark ? const Color(0xFF18181B) : const Color(0xFFF4F4F5)),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -239,7 +239,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                         SelectableText(
                           msg['text'] ?? '',
                           style: TextStyle(
-                            color: isUser ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                            color: isUser ? Colors.white : (isDark ? Colors.white : const Color(0xFF09090B)),
                             fontSize: 13.5,
                             height: 1.4,
                           ),
@@ -285,7 +285,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                   const SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purpleAccent),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF10B981)),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -300,7 +300,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              color: isDark ? const Color(0xFF09090B) : Colors.white,
               border: Border(top: BorderSide(color: isDark ? Colors.white12 : Colors.grey[200]!)),
             ),
             child: Row(
@@ -309,7 +309,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
+                      color: isDark ? const Color(0xFF18181B) : const Color(0xFFF4F4F5),
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
@@ -352,16 +352,16 @@ class _CopilotSheetState extends State<CopilotSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
+            color: const Color(0xFF10B981).withOpacity(0.12),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.purple.withOpacity(0.3)),
+            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.3)),
           ),
           child: Text(
             label,
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Colors.purple,
+              color: Color(0xFF10B981),
             ),
           ),
         ),

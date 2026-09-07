@@ -82,10 +82,9 @@ class _AuthDialogState extends State<AuthDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      child: Container(
-        width: 380,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: isDark ? const Color(0xFF09090B) : Colors.white,
+      child: Padding(
         padding: const EdgeInsets.all(24),
         child: SingleChildScrollView(
           child: Column(
@@ -93,35 +92,36 @@ class _AuthDialogState extends State<AuthDialog> {
             children: [
               // Header Icon
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
                   gradient: AppColors.primeBlueGradient,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.cloud_sync, color: Colors.white, size: 28),
               ),
-              const SizedBox(height: 12),
-              Text(
-                _isSignUp ? 'Create Cloud Account' : 'Sign in to Prime Sync',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              const SizedBox(height: 14),
+              const Text(
+                'Prime Cloud Sync',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
-                'Sync your bookmarks, collections, and open tabs seamlessly across all your devices.',
+                'Sync your bookmarks and tabs across all devices',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark ? Colors.white54 : Colors.grey[600],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
 
-              // Segmented Toggle
+              // Mode Switcher (Sign In vs Register)
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[200],
-                  borderRadius: BorderRadius.circular(20),
+                  color: isDark ? const Color(0xFF18181B) : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
@@ -131,13 +131,14 @@ class _AuthDialogState extends State<AuthDialog> {
                           _isSignUp = false;
                           _errorMessage = null;
                         }),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: !_isSignUp
-                                ? (isDark ? const Color(0xFF383838) : Colors.white)
+                                ? (isDark ? const Color(0xFF27272A) : Colors.white)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: !_isSignUp
                                 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
                                 : null,
@@ -146,8 +147,8 @@ class _AuthDialogState extends State<AuthDialog> {
                           child: Text(
                             'Sign In',
                             style: TextStyle(
-                              fontWeight: !_isSignUp ? FontWeight.bold : FontWeight.normal,
                               fontSize: 13,
+                              fontWeight: !_isSignUp ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -159,23 +160,24 @@ class _AuthDialogState extends State<AuthDialog> {
                           _isSignUp = true;
                           _errorMessage = null;
                         }),
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
                             color: _isSignUp
-                                ? (isDark ? const Color(0xFF383838) : Colors.white)
+                                ? (isDark ? const Color(0xFF27272A) : Colors.white)
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                             boxShadow: _isSignUp
                                 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)]
                                 : null,
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            'Sign Up',
+                            'Create Account',
                             style: TextStyle(
-                              fontWeight: _isSignUp ? FontWeight.bold : FontWeight.normal,
                               fontSize: 13,
+                              fontWeight: _isSignUp ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -192,18 +194,18 @@ class _AuthDialogState extends State<AuthDialog> {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.12),
+                    color: isDark ? const Color(0xFF18181B) : Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                    border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
+                      Icon(Icons.error_outline, size: 16, color: isDark ? Colors.white70 : Colors.black87),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _errorMessage!,
-                          style: const TextStyle(fontSize: 11, color: Colors.redAccent),
+                          style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black87),
                         ),
                       ),
                     ],

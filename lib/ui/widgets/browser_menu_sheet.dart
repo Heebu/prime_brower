@@ -35,10 +35,10 @@ class BrowserMenuSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentTab = browserManager.currentTab;
     final isBookmarked = currentTab != null && browserManager.isBookmarked(currentTab.url);
-    final isIncognito = browserManager.isIncognito;
+    final isDark = Theme.of(context).brightness == Brightness.dark || browserManager.isIncognito;
 
     return Material(
-      color: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
+      color: isDark ? const Color(0xFF09090B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -79,7 +79,7 @@ class BrowserMenuSheet extends StatelessWidget {
                     IconButton(
                       icon: Icon(
                         isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-                        color: isBookmarked ? Colors.amber : null,
+                        color: isBookmarked ? const Color(0xFF10B981) : null,
                       ),
                       tooltip: isBookmarked ? 'Bookmarked' : 'Add Bookmark',
                       onPressed: currentTab == null || currentTab.isNewTabPage
@@ -112,7 +112,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Refresh Page Action
               ListTile(
-                leading: const Icon(Icons.refresh, color: Colors.blueAccent),
+                leading: const Icon(Icons.refresh, color: Color(0xFF10B981)),
                 title: const Text('Refresh'),
                 subtitle: const Text('Reload current web page'),
                 onTap: () {
@@ -129,12 +129,12 @@ class BrowserMenuSheet extends StatelessWidget {
                   animation: ThemeService.instance,
                   builder: (context, _) {
                     final currentMode = ThemeService.instance.currentMode;
-                    final isDarkSheet = Theme.of(context).brightness == Brightness.dark || browserManager.isIncognito;
+                    final isDarkSheet = isDark;
 
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isDarkSheet ? const Color(0xFF1E1E1E) : const Color(0xFFF1F5F9),
+                        color: isDarkSheet ? const Color(0xFF18181B) : const Color(0xFFF4F4F5),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isDarkSheet ? Colors.white12 : Colors.grey.withValues(alpha: 0.2),
@@ -152,7 +152,7 @@ class BrowserMenuSheet extends StatelessWidget {
                                         ? Icons.light_mode_rounded
                                         : Icons.brightness_auto_rounded),
                                 size: 18,
-                                color: const Color(0xFF3B82F6),
+                                color: const Color(0xFF10B981),
                               ),
                               const SizedBox(width: 8),
                               Text(
@@ -221,14 +221,12 @@ class BrowserMenuSheet extends StatelessWidget {
                   browserManager.authService?.isAuthenticated == true
                       ? Icons.cloud_done
                       : Icons.cloud_outlined,
-                  color: browserManager.authService?.isAuthenticated == true
-                      ? Colors.green
-                      : Colors.blueAccent,
+                  color: const Color(0xFF10B981),
                 ),
                 title: const Text('Prime Cloud Sync'),
                 subtitle: Text(
                   browserManager.authService?.isAuthenticated == true
-                      ? 'Signed in as ${browserManager.authService?.userDisplayName}'
+                       ? 'Signed in as ${browserManager.authService?.userDisplayName}'
                       : 'Sign in to sync tabs & bookmarks',
                 ),
                 trailing: const Icon(Icons.chevron_right),
@@ -241,7 +239,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Shields Status tile
               ListTile(
-                leading: const Icon(Icons.shield, color: Colors.deepOrangeAccent),
+                leading: const Icon(Icons.shield, color: Color(0xFF10B981)),
                 title: const Text('Prime Shields'),
                 subtitle: Text(
                   shieldsService.shieldsEnabled
@@ -250,7 +248,7 @@ class BrowserMenuSheet extends StatelessWidget {
                 ),
                 trailing: Switch(
                   value: shieldsService.shieldsEnabled,
-                  activeColor: Colors.deepOrangeAccent,
+                  activeColor: const Color(0xFF10B981),
                   onChanged: (_) {
                     shieldsService.toggleShields();
                     if (currentTab != null && !currentTab.isNewTabPage && shieldsService.shieldsEnabled) {
@@ -268,7 +266,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Pi AI Assistant
               ListTile(
-                leading: const Icon(Icons.auto_awesome, color: Colors.purple),
+                leading: const Icon(Icons.auto_awesome, color: Color(0xFF10B981)),
                 title: const Text('Pi AI'),
                 subtitle: const Text('Summarize page, ask questions, explain simply'),
                 trailing: const Icon(Icons.chevron_right),
@@ -281,7 +279,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Find in Page
               ListTile(
-                leading: const Icon(Icons.search, color: Colors.blueGrey),
+                leading: const Icon(Icons.search, color: Color(0xFF10B981)),
                 title: const Text('Find in Page'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -292,7 +290,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Developer Tools (Inspect Element / Eruda)
               ListTile(
-                leading: const Icon(Icons.developer_mode, color: Colors.blueAccent),
+                leading: const Icon(Icons.developer_mode, color: Color(0xFF10B981)),
                 title: const Text('Inspect Element (Mobile DevTools)'),
                 subtitle: const Text('DOM tree, CSS editor, Network & Console logs'),
                 trailing: const Icon(Icons.chevron_right),
@@ -320,7 +318,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // View Page Source
               ListTile(
-                leading: const Icon(Icons.code, color: Colors.teal),
+                leading: const Icon(Icons.code, color: Color(0xFF10B981)),
                 title: const Text('View Page Source'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
@@ -344,7 +342,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Run JavaScript Console
               ListTile(
-                leading: const Icon(Icons.terminal, color: Colors.purple),
+                leading: const Icon(Icons.terminal, color: Color(0xFF10B981)),
                 title: const Text('JavaScript Console'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -367,7 +365,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Productivity: Reader Mode
               ListTile(
-                leading: const Icon(Icons.article_outlined, color: Colors.indigo),
+                leading: const Icon(Icons.article_outlined, color: Color(0xFF10B981)),
                 title: const Text('Immersive Reader Mode'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
@@ -395,7 +393,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Bookmarks & Collections
               ListTile(
-                leading: const Icon(Icons.collections_bookmark, color: Colors.amber),
+                leading: const Icon(Icons.collections_bookmark, color: Color(0xFF10B981)),
                 title: const Text('Bookmarks & Collections'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -414,7 +412,7 @@ class BrowserMenuSheet extends StatelessWidget {
                 leading: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.download_rounded, color: Colors.blueAccent),
+                    const Icon(Icons.download_rounded, color: Color(0xFF10B981)),
                     if (browserManager.downloadService.activeDownloadsCount > 0)
                       Positioned(
                         right: -4,
@@ -422,7 +420,7 @@ class BrowserMenuSheet extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(3),
                           decoration: const BoxDecoration(
-                            color: Colors.redAccent,
+                            color: Color(0xFF10B981),
                             shape: BoxShape.circle,
                           ),
                           constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
@@ -452,7 +450,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Notifications & Alerts Manager
               ListTile(
-                leading: const Icon(Icons.notifications_outlined, color: Colors.amber),
+                leading: const Icon(Icons.notifications_outlined, color: Color(0xFF10B981)),
                 title: const Text('Notifications & Alerts'),
                 subtitle: const Text('Adverts, news feeds, downloads & page loads'),
                 trailing: const Icon(Icons.chevron_right),
@@ -469,7 +467,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // In-Browser Banners & Alerts
               ListTile(
-                leading: const Icon(Icons.announcement_outlined, color: Colors.blueAccent),
+                leading: const Icon(Icons.announcement_outlined, color: Color(0xFF10B981)),
                 title: const Text('Banners & Network Alerts'),
                 subtitle: const Text('Slow network, offline runner, security & errors'),
                 trailing: const Icon(Icons.chevron_right),
@@ -490,7 +488,7 @@ class BrowserMenuSheet extends StatelessWidget {
 
               // Incognito Tab Action
               ListTile(
-                leading: const Icon(Icons.security, color: Colors.black87),
+                leading: Icon(Icons.security, color: isDark ? Colors.white70 : const Color(0xFF09090B)),
                 title: const Text('New Incognito Tab'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -525,18 +523,18 @@ class BrowserMenuSheet extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF3B82F6)
+                ? const Color(0xFF10B981)
                 : (isDark ? Colors.white10 : Colors.white),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF3B82F6)
+                  ? const Color(0xFF10B981)
                   : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
