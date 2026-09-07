@@ -8,6 +8,7 @@ import 'services/firebase_auth_service.dart';
 import 'services/firebase_sync_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
+import 'ui/widgets/omnibox_suggestions_overlay.dart';
 import 'ui/widgets/bottom_nav_bar.dart';
 import 'ui/widgets/browser_menu_sheet.dart';
 import 'ui/tabs/tab_grid_screen.dart';
@@ -33,6 +34,11 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
   late final AiCopilotService _copilotService;
   bool _isFindInPageActive = false;
 
+  late final TextEditingController _omniboxController;
+  late final FocusNode _omniboxFocusNode;
+  bool _isOmniboxFocused = false;
+  String _omniboxQuery = '';
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +63,18 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
       },
     );
     _copilotService = AiCopilotService();
+
+    final tab = _browserManager.currentTab;
+    final isNewTab = tab == null || tab.url == 'prime://newtab';
+    _omniboxController = TextEditingController(text: isNewTab ? '' : tab.url);
+    _omniboxFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _omniboxController.dispose();
+    _omniboxFocusNode.dispose();
+    super.dispose();
   }
 
   void _openTabGrid() {
@@ -166,85 +184,144 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
         final tabs = _browserManager.currentTabs;
         final isIncognito = _browserManager.isIncognito;
 
-        return Scaffold(
-          backgroundColor: isIncognito ? const Color(0xFF121212) : Colors.grey[100],
-          appBar: OmniboxAppBar(
-            key: ValueKey('omnibox_${currentTab?.id}_$isIncognito'),
-            browserManager: _browserManager,
-            shieldsService: _shieldsService,
-            onOpenMenu: _openMenuSheet,
-            onOpenCopilot: _openCopilot,
-            onFindInPage: _openFindInPage,
-            onOpenSync: _openSyncSheet,
-            onOpenShieldsDetails: _openShieldsDetails,
-          ),
-          body: Column(
-            children: [
-              // In-Page Search Overlay
-              if (_isFindInPageActive && currentTab != null)
-                FindInPageBar(
-                  controller: currentTab.controller,
-                  onClose: () => setState(() => _isFindInPageActive = false),
-                ),
-
-              // Page Loading Progress Bar
-              if (currentTab != null && currentTab.isLoading && currentTab.progress < 100)
-                LinearProgressIndicator(
-                  value: currentTab.progress / 100.0,
-                  minHeight: 2.5,
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
-                  ),
-                ),
-
-              // Web View Stack or Empty State
-              Expanded(
-                child: tabs.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              isIncognito ? Icons.security : Icons.tab_unselected,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              isIncognito ? 'No open incognito tabs' : 'No open tabs',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: isIncognito ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () => _browserManager.openNewTab('prime://newtab'),
-                              icon: const Icon(Icons.add),
-                              label: Text(isIncognito ? 'Open Incognito Tab' : 'Open New Tab'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : IndexedStack(
-                        index: _browserManager.currentTabIndex,
-                        children: tabs.map((tab) {
-                          return WebViewPage(
-                            key: ValueKey(tab.id),
-                            tab: tab,
-                            browserManager: _browserManager,
-                            shieldsService: _shieldsService,
-                          );
-                        }).toList(),
+        return PopScope(
+          canPop: !_isOmniboxFocused && !_isFindInPageActive,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            if (_isOmniboxFocused) {
+              _omniboxFocusNode.unfocus();
+              return;
+            }
+            if (_isFindInPageActive) {
+              setState(() => _isFindInPageActive = false);
+              return;
+            }
+          },
+          child: Scaffold(
+            backgroundColor: isIncognito ? const Color(0xFF121212) : Colors.grey[100],
+            appBar: OmniboxAppBar(
+              key: ValueKey('omnibox_${currentTab?.id}_$isIncognito'),
+              browserManager: _browserManager,
+              shieldsService: _shieldsService,
+              controller: _omniboxController,
+              focusNode: _omniboxFocusNode,
+              onOpenTabs: _openTabGrid,
+              onFocusChanged: (focused) {
+                setState(() {
+                  _isOmniboxFocused = focused;
+                  if (!focused) {
+                    final tab = _browserManager.currentTab;
+                    final isNewTab = tab == null || tab.url == 'prime://newtab';
+                    _omniboxController.text = isNewTab ? '' : tab.url;
+                  }
+                });
+              },
+              onQueryChanged: (query) {
+                setState(() {
+                  _omniboxQuery = query;
+                });
+              },
+              onOpenMenu: _openMenuSheet,
+              onOpenCopilot: _openCopilot,
+              onFindInPage: _openFindInPage,
+              onOpenSync: _openSyncSheet,
+              onOpenShieldsDetails: _openShieldsDetails,
+            ),
+            body: Stack(
+              children: [
+                Column(
+                  children: [
+                    // In-Page Search Overlay
+                    if (_isFindInPageActive && currentTab != null)
+                      FindInPageBar(
+                        controller: currentTab.controller,
+                        onClose: () => setState(() => _isFindInPageActive = false),
                       ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: BottomNavBar(
-            browserManager: _browserManager,
-            onOpenTabs: _openTabGrid,
-            onOpenMenu: _openMenuSheet,
+
+                    // Page Loading Progress Bar
+                    if (currentTab != null && currentTab.isLoading && currentTab.progress < 100)
+                      LinearProgressIndicator(
+                        value: currentTab.progress / 100.0,
+                        minHeight: 2.5,
+                        backgroundColor: Colors.transparent,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          isIncognito ? Colors.deepPurpleAccent : Colors.blueAccent,
+                        ),
+                      ),
+
+                    // Web View Stack or Empty State
+                    Expanded(
+                      child: tabs.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    isIncognito ? Icons.security : Icons.tab_unselected,
+                                    size: 64,
+                                    color: Colors.grey[400],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    isIncognito ? 'No open incognito tabs' : 'No open tabs',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: isIncognito ? Colors.white70 : Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: () => _browserManager.openNewTab('prime://newtab'),
+                                    icon: const Icon(Icons.add),
+                                    label: Text(isIncognito ? 'Open Incognito Tab' : 'Open New Tab'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : IndexedStack(
+                              index: _browserManager.currentTabIndex,
+                              children: tabs.map((tab) {
+                                return WebViewPage(
+                                  key: ValueKey(tab.id),
+                                  tab: tab,
+                                  browserManager: _browserManager,
+                                  shieldsService: _shieldsService,
+                                );
+                              }).toList(),
+                            ),
+                    ),
+                  ],
+                ),
+
+                // Omnibox Suggestions Overlay
+                if (_isOmniboxFocused)
+                  Positioned.fill(
+                    child: OmniboxSuggestionsOverlay(
+                      browserManager: _browserManager,
+                      query: _omniboxQuery,
+                      onSelect: (urlOrQuery) {
+                        _omniboxFocusNode.unfocus();
+                        _browserManager.navigateCurrentTab(urlOrQuery);
+                      },
+                      onQuickFill: (text) {
+                        _omniboxController.text = text;
+                        _omniboxController.selection = TextSelection.collapsed(offset: text.length);
+                        setState(() {
+                          _omniboxQuery = text;
+                        });
+                      },
+                      onDismiss: () {
+                        _omniboxFocusNode.unfocus();
+                      },
+                    ),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: BottomNavBar(
+              browserManager: _browserManager,
+              onOpenTabs: _openTabGrid,
+              onOpenMenu: _openMenuSheet,
+            ),
           ),
         );
       },

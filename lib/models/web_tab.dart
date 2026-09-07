@@ -15,6 +15,10 @@ class WebTab {
   DateTime lastActiveTime;
   final int estimatedMemorySavedMb;
 
+  // Tab Organization & Pinning
+  bool isPinned;
+  String? groupTag;
+
   WebViewController? _controller;
   final void Function(WebViewController controller)? onPageFinishedCallback;
   final bool Function(String url)? onNavigationRequestFilter;
@@ -36,6 +40,8 @@ class WebTab {
     this.progress = 0,
     this.devToolsInjected = false,
     this.isFrozen = false,
+    this.isPinned = false,
+    this.groupTag,
     DateTime? lastActiveTime,
     this.estimatedMemorySavedMb = 42,
     this.onUrlChanged,
@@ -58,6 +64,15 @@ class WebTab {
   }
 
   bool get isNewTabPage => url.isEmpty || url == 'prime://newtab' || url == 'about:blank';
+
+  String get domain {
+    if (isNewTabPage) return 'New Tab';
+    try {
+      final uri = Uri.parse(url);
+      if (uri.host.isNotEmpty) return uri.host.replaceFirst('www.', '');
+    } catch (_) {}
+    return 'Web';
+  }
 
   WebViewController get controller {
     if (_controller == null) {

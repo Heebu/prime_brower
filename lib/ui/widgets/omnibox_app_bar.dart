@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/browser_manager.dart';
 import '../../services/shields_service.dart';
 import '../../core/design_system/app_colors.dart';
@@ -12,6 +13,11 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback onFindInPage;
   final VoidCallback onOpenSync;
   final VoidCallback? onOpenShieldsDetails;
+  final VoidCallback? onOpenTabs;
+  final ValueChanged<bool>? onFocusChanged;
+  final ValueChanged<String>? onQueryChanged;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
 
   const OmniboxAppBar({
     Key? key,
@@ -22,6 +28,11 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onFindInPage,
     required this.onOpenSync,
     this.onOpenShieldsDetails,
+    this.onOpenTabs,
+    this.onFocusChanged,
+    this.onQueryChanged,
+    this.controller,
+    this.focusNode,
   }) : super(key: key);
 
   @override
@@ -32,40 +43,62 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _OmniboxAppBarState extends State<OmniboxAppBar> {
-  late final TextEditingController _controller;
-  final FocusNode _focusNode = FocusNode();
+  TextEditingController? _internalController;
+  FocusNode? _internalFocusNode;
+
+  TextEditingController get _effectiveController => widget.controller ?? _internalController!;
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode!;
 
   @override
   void initState() {
     super.initState();
-    final tab = widget.browserManager.currentTab;
-    final isNewTab = tab == null || tab.url == 'prime://newtab';
-    _controller = TextEditingController(text: isNewTab ? '' : tab.url);
+    if (widget.controller == null) {
+      final tab = widget.browserManager.currentTab;
+      final isNewTab = tab == null || tab.url == 'prime://newtab';
+      _internalController = TextEditingController(text: isNewTab ? '' : tab.url);
+    }
+    if (widget.focusNode == null) {
+      _internalFocusNode = FocusNode();
+    }
+
+    _effectiveFocusNode.addListener(_handleFocusChange);
+    _effectiveController.addListener(_handleTextChange);
+  }
+
+  void _handleFocusChange() {
+    widget.onFocusChanged?.call(_effectiveFocusNode.hasFocus);
+    setState(() {});
+  }
+
+  void _handleTextChange() {
+    widget.onQueryChanged?.call(_effectiveController.text);
   }
 
   @override
   void didUpdateWidget(covariant OmniboxAppBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_focusNode.hasFocus) {
+    if (!_effectiveFocusNode.hasFocus) {
       final tab = widget.browserManager.currentTab;
       final expected = (tab == null || tab.url == 'prime://newtab') ? '' : tab.url;
-      if (_controller.text != expected) {
-        _controller.text = expected;
+      if (_effectiveController.text != expected) {
+        _effectiveController.text = expected;
       }
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
+    _effectiveFocusNode.removeListener(_handleFocusChange);
+    _effectiveController.removeListener(_handleTextChange);
+    _internalController?.dispose();
+    _internalFocusNode?.dispose();
     super.dispose();
   }
 
   void _submitUrl() {
-    final text = _controller.text.trim();
+    final text = _effectiveController.text.trim();
     if (text.isNotEmpty) {
-      _focusNode.unfocus();
+      _effectiveFocusNode.unfocus();
       widget.browserManager.navigateCurrentTab(text);
     }
   }
@@ -121,162 +154,223 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
     final isIncognito = widget.browserManager.isIncognito;
     final isNewTab = tab == null || tab.url == 'prime://newtab';
     final isHttps = tab != null && tab.url.startsWith('https://');
+    final isFocused = _effectiveFocusNode.hasFocus;
 
-    return AppBar(
-      elevation: 0.5,
-      backgroundColor: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
-      foregroundColor: isIncognito ? Colors.white : Colors.black87,
-      titleSpacing: 8,
-      title: Container(
-        height: 42,
-        decoration: BoxDecoration(
-          color: isIncognito ? const Color(0xFF2C2C2C) : Colors.grey[200],
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          children: [
-            // SSL / Security Lock Icon
-            IconButton(
-              icon: Icon(
-                isNewTab
-                    ? Icons.search
-                    : (isIncognito
-                        ? Icons.security
-                        : (isHttps ? Icons.lock : Icons.info_outline)),
-                size: 18,
-                color: isNewTab
-                    ? (isIncognito ? Colors.white54 : Colors.grey[600])
-                    : (isHttps ? Colors.green : (isIncognito ? Colors.white70 : Colors.orange)),
-              ),
-              tooltip: isNewTab ? 'Search' : 'Site Information',
-              onPressed: isNewTab ? null : _showSecurityInfo,
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(56),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onVerticalDragEnd: (details) {
+          if (!isFocused && (details.primaryVelocity ?? 0) > 250) {
+            HapticFeedback.mediumImpact();
+            widget.onOpenTabs?.call();
+          }
+        },
+        onHorizontalDragEnd: (details) {
+          if (!isFocused) {
+            final vel = details.primaryVelocity ?? 0;
+            if (vel > 250) {
+              HapticFeedback.selectionClick();
+              widget.browserManager.switchToAdjacentTab(-1);
+            } else if (vel < -250) {
+              HapticFeedback.selectionClick();
+              widget.browserManager.switchToAdjacentTab(1);
+            }
+          }
+        },
+        child: AppBar(
+          elevation: isFocused ? 2 : 0.5,
+          backgroundColor: isIncognito ? const Color(0xFF1E1E1E) : Colors.white,
+          foregroundColor: isIncognito ? Colors.white : Colors.black87,
+          titleSpacing: isFocused ? 0 : 8,
+          leading: isFocused
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Cancel',
+                  onPressed: () {
+                    _effectiveFocusNode.unfocus();
+                    final tab = widget.browserManager.currentTab;
+                    final expected = (tab == null || tab.url == 'prime://newtab') ? '' : tab.url;
+                    _effectiveController.text = expected;
+                  },
+                )
+              : null,
+          automaticallyImplyLeading: false,
+          title: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            height: 42,
+            margin: EdgeInsets.only(right: isFocused ? 12 : 0),
+            decoration: BoxDecoration(
+              color: isIncognito
+                  ? (isFocused ? const Color(0xFF333333) : const Color(0xFF2C2C2C))
+                  : (isFocused ? Colors.grey[100] : Colors.grey[200]),
+              borderRadius: BorderRadius.circular(24),
+              border: isFocused
+                  ? Border.all(
+                      color: isIncognito ? Colors.purpleAccent : Colors.blueAccent,
+                      width: 1.5,
+                    )
+                  : null,
             ),
-            // Omnibox URL Input
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                focusNode: _focusNode,
-                textInputAction: TextInputAction.go,
-                onSubmitted: (_) => _submitUrl(),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isIncognito ? Colors.white : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Search or type URL',
-                  hintStyle: TextStyle(
-                    color: isIncognito ? Colors.white38 : Colors.grey[500],
-                    fontSize: 13,
+            child: Row(
+              children: [
+                // SSL / Security Lock Icon (only if not focused)
+                if (!isFocused)
+                  IconButton(
+                    icon: Icon(
+                      isNewTab
+                          ? Icons.search
+                          : (isIncognito
+                              ? Icons.security
+                              : (isHttps ? Icons.lock : Icons.info_outline)),
+                      size: 18,
+                      color: isNewTab
+                          ? (isIncognito ? Colors.white54 : Colors.grey[600])
+                          : (isHttps ? Colors.green : (isIncognito ? Colors.white70 : Colors.orange)),
+                    ),
+                    tooltip: isNewTab ? 'Search' : 'Site Information',
+                    onPressed: isNewTab ? null : _showSecurityInfo,
+                  )
+                else
+                  const Padding(
+                    padding: EdgeInsets.only(left: 12, right: 6),
+                    child: Icon(Icons.search, size: 20, color: Colors.blueAccent),
                   ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-            // Clear or Shields Badge
-            if (_controller.text.isNotEmpty && _focusNode.hasFocus)
-              IconButton(
-                icon: const Icon(Icons.clear, size: 18),
-                onPressed: () {
-                  _controller.clear();
-                  setState(() {});
-                },
-              )
-            else if (widget.shieldsService.shieldsEnabled)
-              GestureDetector(
-                onTap: () {
-                  if (widget.onOpenShieldsDetails != null) {
-                    widget.onOpenShieldsDetails!();
-                  } else {
-                    _showSecurityInfo();
-                  }
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.deepOrangeAccent.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.shield, size: 13, color: Colors.deepOrangeAccent),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${widget.shieldsService.blockedElementsCount}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.deepOrangeAccent,
-                        ),
+
+                // Omnibox URL Input
+                Expanded(
+                  child: TextField(
+                    controller: _effectiveController,
+                    focusNode: _effectiveFocusNode,
+                    textInputAction: TextInputAction.go,
+                    onSubmitted: (_) => _submitUrl(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isIncognito ? Colors.white : Colors.black87,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search or type URL',
+                      hintStyle: TextStyle(
+                        color: isIncognito ? Colors.white38 : Colors.grey[500],
+                        fontSize: 13,
                       ),
-                    ],
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
                   ),
                 ),
-              ),
-          ],
+
+                // Clear button when focused and text present
+                if (_effectiveController.text.isNotEmpty && isFocused)
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    tooltip: 'Clear',
+                    onPressed: () {
+                      _effectiveController.clear();
+                      widget.onQueryChanged?.call('');
+                      setState(() {});
+                    },
+                  )
+                else if (!isFocused && widget.shieldsService.shieldsEnabled)
+                  GestureDetector(
+                    onTap: () {
+                      if (widget.onOpenShieldsDetails != null) {
+                        widget.onOpenShieldsDetails!();
+                      } else {
+                        _showSecurityInfo();
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrangeAccent.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.shield, size: 13, color: Colors.deepOrangeAccent),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${widget.shieldsService.blockedElementsCount}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepOrangeAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: isFocused
+              ? const []
+              : [
+                  // Copilot AI Action Pill
+                  AnimatedPressable(
+                    onTap: widget.onOpenCopilot,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.copilotGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.purple.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text(
+                            'Copilot',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Cloud Sync / Account Button
+                  IconButton(
+                    icon: Icon(
+                      widget.browserManager.authService?.isAuthenticated == true
+                          ? Icons.cloud_done
+                          : Icons.cloud_outlined,
+                      size: 20,
+                      color: widget.browserManager.authService?.isAuthenticated == true
+                          ? Colors.green
+                          : null,
+                    ),
+                    tooltip: 'Prime Cloud Sync',
+                    onPressed: widget.onOpenSync,
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      tab != null && tab.isLoading ? Icons.close : Icons.refresh,
+                      size: 20,
+                    ),
+                    tooltip: tab != null && tab.isLoading ? 'Stop' : 'Reload',
+                    onPressed: tab == null ? null : () => tab.reload(),
+                  ),
+                ],
         ),
       ),
-      actions: [
-        // Copilot AI Action Pill
-        AnimatedPressable(
-          onTap: widget.onOpenCopilot,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: AppColors.copilotGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.purple.withOpacity(0.3),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.auto_awesome, size: 14, color: Colors.white),
-                SizedBox(width: 4),
-                Text(
-                  'Copilot',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        // Cloud Sync / Account Button
-        IconButton(
-          icon: Icon(
-            widget.browserManager.authService?.isAuthenticated == true
-                ? Icons.cloud_done
-                : Icons.cloud_outlined,
-            size: 20,
-            color: widget.browserManager.authService?.isAuthenticated == true
-                ? Colors.green
-                : null,
-          ),
-          tooltip: 'Prime Cloud Sync',
-          onPressed: widget.onOpenSync,
-        ),
-        IconButton(
-          icon: Icon(
-            tab != null && tab.isLoading ? Icons.close : Icons.refresh,
-            size: 20,
-          ),
-          tooltip: tab != null && tab.isLoading ? 'Stop' : 'Reload',
-          onPressed: tab == null ? null : () => tab.reload(),
-        ),
-      ],
     );
   }
 }

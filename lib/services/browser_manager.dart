@@ -24,6 +24,15 @@ class BrowserManager with ChangeNotifier {
   final List<Bookmark> _bookmarks = [];
   StreamSubscription<List<Bookmark>>? _bookmarksSubscription;
 
+  // Search and Browsing History
+  final List<String> _searchHistory = [
+    'Flutter 3.44 release notes',
+    'Brave browser features',
+    'Dart devtools inspect element',
+    'TechCrunch mobile news',
+  ];
+  final List<Map<String, String>> _browsingHistory = [];
+
   BrowserManager({
     required this.shieldsService,
     DownloadService? downloadService,
@@ -91,6 +100,8 @@ class BrowserManager with ChangeNotifier {
   int get normalTabIndex => _normalTabIndex;
   int get incognitoTabIndex => _incognitoTabIndex;
   List<Bookmark> get bookmarks => List.unmodifiable(_bookmarks);
+  List<String> get searchHistory => List.unmodifiable(_searchHistory);
+  List<Map<String, String>> get browsingHistory => List.unmodifiable(_browsingHistory);
 
   List<WebTab> get currentTabs => _isIncognito ? _incognitoTabs : _normalTabs;
   int get currentTabIndex => _isIncognito ? _incognitoTabIndex : _normalTabIndex;
@@ -130,8 +141,14 @@ class BrowserManager with ChangeNotifier {
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       url: targetUrl,
       isIncognito: targetIncognito,
-      onUrlChanged: (_) => notifyListeners(),
-      onTitleChanged: (_) => notifyListeners(),
+      onUrlChanged: (newUrl) {
+        recordBrowsingHistory(tab.title, newUrl);
+        notifyListeners();
+      },
+      onTitleChanged: (newTitle) {
+        recordBrowsingHistory(newTitle, tab.url);
+        notifyListeners();
+      },
       onLoadingChanged: (_) => notifyListeners(),
       onProgressChanged: (_) => notifyListeners(),
       onFrozenChanged: (_) => notifyListeners(),
@@ -236,8 +253,97 @@ class BrowserManager with ChangeNotifier {
     }
   }
 
+  void reorderTab(int oldIndex, int newIndex, {bool? incognito}) {
+    final targetIncognito = incognito ?? _isIncognito;
+    final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
+    if (oldIndex < 0 || oldIndex >= targetList.length) return;
+    if (newIndex < 0 || newIndex > targetList.length) return;
+
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final item = targetList.removeAt(oldIndex);
+    targetList.insert(newIndex, item);
+
+    if (targetIncognito) {
+      if (_incognitoTabIndex == oldIndex) {
+        _incognitoTabIndex = newIndex;
+      } else if (_incognitoTabIndex > oldIndex && _incognitoTabIndex <= newIndex) {
+        _incognitoTabIndex -= 1;
+      } else if (_incognitoTabIndex < oldIndex && _incognitoTabIndex >= newIndex) {
+        _incognitoTabIndex += 1;
+      }
+    } else {
+      if (_normalTabIndex == oldIndex) {
+        _normalTabIndex = newIndex;
+      } else if (_normalTabIndex > oldIndex && _normalTabIndex <= newIndex) {
+        _normalTabIndex -= 1;
+      } else if (_normalTabIndex < oldIndex && _normalTabIndex >= newIndex) {
+        _normalTabIndex += 1;
+      }
+    }
+    notifyListeners();
+  }
+
+  void togglePinTab(int index, {bool? incognito}) {
+    final targetIncognito = incognito ?? _isIncognito;
+    final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
+    if (index >= 0 && index < targetList.length) {
+      targetList[index].isPinned = !targetList[index].isPinned;
+      notifyListeners();
+    }
+  }
+
+  void switchToAdjacentTab(int delta) {
+    final targetList = currentTabs;
+    if (targetList.length <= 1) return;
+    final newIndex = (currentTabIndex + delta).clamp(0, targetList.length - 1);
+    if (newIndex != currentTabIndex) {
+      switchToTab(newIndex);
+    }
+  }
+
+  void addSearchHistory(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty || trimmed == 'prime://newtab') return;
+    _searchHistory.remove(trimmed);
+    _searchHistory.insert(0, trimmed);
+    if (_searchHistory.length > 30) {
+      _searchHistory.removeLast();
+    }
+    notifyListeners();
+  }
+
+  void removeSearchHistory(String query) {
+    _searchHistory.remove(query);
+    notifyListeners();
+  }
+
+  void clearSearchHistory() {
+    _searchHistory.clear();
+    notifyListeners();
+  }
+
+  void recordBrowsingHistory(String title, String url) {
+    if (url.isEmpty || url == 'prime://newtab' || url == 'about:blank') return;
+    if (_isIncognito) return;
+    _browsingHistory.removeWhere((item) => item['url'] == url);
+    _browsingHistory.insert(0, {
+      'title': title.isNotEmpty ? title : url,
+      'url': url,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+    if (_browsingHistory.length > 50) {
+      _browsingHistory.removeLast();
+    }
+    notifyListeners();
+  }
+
   void navigateCurrentTab(String input) {
     final sanitized = sanitizeInput(input);
+    if (input.trim().isNotEmpty && input.trim() != 'prime://newtab') {
+      addSearchHistory(input.trim());
+    }
     final active = currentTab;
     if (active == null) {
       openNewTab(sanitized);

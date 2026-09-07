@@ -10,6 +10,8 @@ import 'package:prime_brower/services/download_service.dart';
 import 'package:prime_brower/services/shields_service.dart';
 import 'package:prime_brower/ui/downloads/downloads_screen.dart';
 import 'package:prime_brower/ui/shields/shields_details_sheet.dart';
+import 'package:prime_brower/ui/tabs/tab_grid_screen.dart';
+import 'package:prime_brower/ui/widgets/omnibox_suggestions_overlay.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -196,4 +198,141 @@ void main() {
     expect(shortcuts.any((s) => s.title == 'YouTube'), true);
     expect(shortcuts.any((s) => s.title == 'GitHub'), true);
   });
+
+  test('BrowserManager tab organization: pinning, reordering, and adjacent switching', () {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    // Initial tab
+    expect(manager.normalTabs.length, 1);
+    expect(manager.normalTabs.first.isPinned, false);
+
+    // Pin initial tab
+    manager.togglePinTab(0);
+    expect(manager.normalTabs.first.isPinned, true);
+
+    // Unpin
+    manager.togglePinTab(0);
+    expect(manager.normalTabs.first.isPinned, false);
+
+    // Open two more tabs
+    manager.openNewTab('https://flutter.dev');
+    manager.openNewTab('https://dart.dev');
+    expect(manager.normalTabs.length, 3);
+
+    // Pin first and third tab
+    manager.togglePinTab(0);
+    manager.togglePinTab(2);
+    expect(manager.normalTabs[0].isPinned, true);
+    expect(manager.normalTabs[1].isPinned, false);
+    expect(manager.normalTabs[2].isPinned, true);
+
+    // Adjacent tab switching
+    manager.switchToTab(1);
+    expect(manager.currentTabIndex, 1);
+    manager.switchToAdjacentTab(1);
+    expect(manager.currentTabIndex, 2);
+    manager.switchToAdjacentTab(-1);
+    expect(manager.currentTabIndex, 1);
+
+    // Reorder tabs: move index 2 to index 0
+    final lastTabUrl = manager.normalTabs[2].url;
+    manager.reorderTab(2, 0);
+    expect(manager.normalTabs[0].url, lastTabUrl);
+  });
+
+  test('BrowserManager search history recording and management', () {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    // Clear sample entries first to test clean lifecycle
+    manager.clearSearchHistory();
+    expect(manager.searchHistory.isEmpty, true);
+
+    // Add search history
+    manager.addSearchHistory('flutter animations');
+    manager.addSearchHistory('flutter gestures');
+    expect(manager.searchHistory.length, 2);
+    expect(manager.searchHistory.first, 'flutter gestures');
+
+    // Re-adding existing moves it to top
+    manager.addSearchHistory('flutter animations');
+    expect(manager.searchHistory.first, 'flutter animations');
+    expect(manager.searchHistory.length, 2);
+
+    // Remove specific query
+    manager.removeSearchHistory('flutter gestures');
+    expect(manager.searchHistory.contains('flutter gestures'), false);
+
+    // Clear all
+    manager.clearSearchHistory();
+    expect(manager.searchHistory.isEmpty, true);
+  });
+
+  testWidgets('OmniboxSuggestionsOverlay smoke test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+    manager.addSearchHistory('flutter tutorial');
+
+    String selectedValue = '';
+    String filledValue = '';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OmniboxSuggestionsOverlay(
+            browserManager: manager,
+            query: 'flutt',
+            onSelect: (val) => selectedValue = val,
+            onQuickFill: (val) => filledValue = val,
+            onDismiss: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify search option for typing query
+    expect(find.text('flutt'), findsOneWidget);
+    expect(find.text('RECENT SEARCHES'), findsOneWidget);
+    expect(find.text('flutter tutorial'), findsOneWidget);
+
+    // Tap quick-fill arrow on recent search
+    final quickFillIcon = find.byIcon(Icons.north_west_rounded);
+    expect(quickFillIcon, findsAtLeastNWidgets(1));
+    await tester.tap(quickFillIcon.first);
+    expect(filledValue, 'flutt');
+  });
+
+  testWidgets('TabGridScreen organizations and filters smoke test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+    manager.openNewTab('https://flutter.dev');
+    manager.togglePinTab(0); // Pin first tab
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TabGridScreen(browserManager: manager),
+      ),
+    );
+    await tester.pump();
+
+    // Verify search tabs input
+    expect(find.byType(TextField), findsOneWidget);
+
+    // Verify organization filter chips
+    expect(find.text('All (2)'), findsOneWidget);
+    expect(find.text('Pinned (1)'), findsOneWidget);
+    expect(find.text('By Domain'), findsOneWidget);
+    expect(find.text('PINNED'), findsOneWidget);
+
+    // Switch filter to Pinned
+    await tester.tap(find.text('Pinned (1)'));
+    await tester.pump();
+
+    // Switch filter to By Domain
+    await tester.tap(find.text('By Domain'));
+    await tester.pump();
+  });
 }
+
