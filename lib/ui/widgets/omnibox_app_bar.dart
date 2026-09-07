@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../services/browser_manager.dart';
 import '../../services/shields_service.dart';
 import '../../core/design_system/app_colors.dart';
-import '../../core/design_system/responsive_layout.dart';
 import '../../core/design_system/animated_pressable.dart';
 
 class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
