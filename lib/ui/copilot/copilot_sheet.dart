@@ -4,6 +4,8 @@ import '../../core/design_system/app_colors.dart';
 import '../../core/design_system/animated_pressable.dart';
 import '../../services/ai_copilot_service.dart';
 
+typedef PiAiSheet = CopilotSheet;
+
 class CopilotSheet extends StatefulWidget {
   final AiCopilotService copilotService;
   final String pageTitle;
@@ -29,13 +31,13 @@ class _CopilotSheetState extends State<CopilotSheet> {
   @override
   void initState() {
     super.initState();
-    // Context-aware welcome message from Copilot
+    // Context-aware welcome message from Pi AI
     final hasContent = widget.pageContent.trim().isNotEmpty;
     _messages.add({
       'role': 'assistant',
       'text': hasContent
-          ? 'Hi! I\'m your **Prime Copilot**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?'
-          : 'Hi! I\'m your **Prime Copilot**. Ask me any question, or navigate to a web page and I can summarize or explain it for you!',
+          ? 'Hi! I\'m your **Pi AI**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?'
+          : 'Hi! I\'m your **Pi AI**. Ask me any question, or navigate to a web page and I can summarize or explain it for you!',
     });
   }
 
@@ -87,7 +89,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
   }
 
   void _openSettingsDialog() {
-    final controller = TextEditingController(text: widget.copilotService.geminiApiKey ?? '');
+    final controller = TextEditingController(text: widget.copilotService.apiKey ?? '');
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -95,7 +97,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
           children: [
             Icon(Icons.key, color: Colors.purple),
             SizedBox(width: 8),
-            Text('Gemini API Key', style: TextStyle(fontSize: 16)),
+            Text('Pi AI Settings', style: TextStyle(fontSize: 16)),
           ],
         ),
         content: Column(
@@ -103,7 +105,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Add your Google Gemini API key to enable high-intelligence generative synthesis. If omitted, Prime Browser uses its smart local extractive AI engine.',
+              'Add your AI API key to enable high-intelligence generative synthesis. If omitted, Prime Browser uses its smart local extractive AI engine.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -154,9 +156,9 @@ class _CopilotSheetState extends State<CopilotSheet> {
           // Header Bar with gradient aura
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: AppColors.copilotGradient,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            decoration: const BoxDecoration(
+              gradient: AppColors.piAiGradient,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Row(
               children: [
@@ -164,7 +166,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
-                    'Edge Copilot AI',
+                    'Pi AI Assistant',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -174,7 +176,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 20),
-                  tooltip: 'Copilot Settings',
+                  tooltip: 'Pi AI Settings',
                   onPressed: _openSettingsDialog,
                 ),
                 IconButton(
@@ -287,7 +289,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Copilot is analyzing this page...',
+                    'Pi AI is analyzing this page...',
                     style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.grey),
                   ),
                 ],
@@ -315,7 +317,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: _sendMessage,
                       decoration: const InputDecoration(
-                        hintText: 'Ask Copilot anything about this page...',
+                        hintText: 'Ask Pi AI anything about this page...',
                         hintStyle: TextStyle(fontSize: 13),
                         border: InputBorder.none,
                       ),
@@ -328,7 +330,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: const BoxDecoration(
-                      gradient: AppColors.copilotGradient,
+                      gradient: AppColors.piAiGradient,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.arrow_upward, color: Colors.white, size: 20),

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Brand & Feature Gradients
-  static const LinearGradient copilotGradient = LinearGradient(
+  static const LinearGradient piAiGradient = LinearGradient(
     colors: [Color(0xFF7928CA), Color(0xFFFF0080)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+  static const LinearGradient copilotGradient = piAiGradient;
 
   static const LinearGradient primeBlueGradient = LinearGradient(
     colors: [Color(0xFF0061FF), Color(0xFF60EFFF)],
@@ -32,6 +33,7 @@ class AppColors {
   static const Color shieldOrange = Color(0xFFFF5722);
   static const Color devToolsBlue = Color(0xFF2563EB);
   static const Color copilotPurple = Color(0xFF8B5CF6);
+  static const Color piAiPurple = copilotPurple;
 
   // Surfaces - Light
   static const Color lightBackground = Color(0xFFF8F9FA);

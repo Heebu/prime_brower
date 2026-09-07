@@ -312,14 +312,14 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
           actions: isFocused
               ? const []
               : [
-                  // Copilot AI Action Pill
+                  // Pi AI Action Pill
                   AnimatedPressable(
                     onTap: widget.onOpenCopilot,
                     child: Container(
                       margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        gradient: AppColors.copilotGradient,
+                        gradient: AppColors.piAiGradient,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -335,7 +335,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                           Icon(Icons.auto_awesome, size: 14, color: Colors.white),
                           SizedBox(width: 4),
                           Text(
-                            'Copilot',
+                            'Pi AI',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,

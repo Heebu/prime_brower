@@ -14,8 +14,10 @@ import 'package:prime_brower/ui/tabs/tab_grid_screen.dart';
 import 'package:prime_brower/ui/widgets/omnibox_suggestions_overlay.dart';
 import 'package:prime_brower/ui/widgets/browser_menu_sheet.dart';
 import 'package:prime_brower/ui/sync/cloud_sync_sheet.dart';
+import 'package:prime_brower/services/ai_copilot_service.dart';
 import 'package:prime_brower/services/firebase_auth_service.dart';
 import 'package:prime_brower/services/firebase_sync_service.dart';
+import 'package:prime_brower/ui/copilot/copilot_sheet.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -31,13 +33,13 @@ void main() {
     expect(find.byIcon(Icons.layers_outlined), findsOneWidget);
     expect(find.byIcon(Icons.more_vert), findsOneWidget);
 
-    // Verify Copilot AI button and Cloud Sync are present
-    expect(find.text('Copilot'), findsOneWidget);
+    // Verify Pi AI button (in Omnibox pill & speed dial) and Cloud Sync are present
+    expect(find.text('Pi AI'), findsNWidgets(2));
     expect(find.byIcon(Icons.cloud_outlined), findsOneWidget);
 
     // Verify New Tab Start Dashboard elements
     expect(find.text('Prime Browser'), findsOneWidget);
-    expect(find.text('Prime Shields (Brave Privacy)'), findsOneWidget);
+    expect(find.text('Prime Privacy Shields'), findsOneWidget);
     expect(find.text('Google'), findsNWidgets(2)); // in search engine picker & speed dial
     expect(find.text('YouTube'), findsOneWidget);
   });
@@ -201,6 +203,7 @@ void main() {
     expect(shortcuts.any((s) => s.title == 'Google'), true);
     expect(shortcuts.any((s) => s.title == 'YouTube'), true);
     expect(shortcuts.any((s) => s.title == 'GitHub'), true);
+    expect(shortcuts.any((s) => s.title == 'Pi AI'), true);
   });
 
   test('BrowserManager tab organization: pinning, reordering, and adjacent switching', () {
@@ -365,8 +368,8 @@ void main() {
 
     // Verify key menu items rendered without framework assertions
     expect(find.text('Prime Cloud Sync'), findsOneWidget);
-    expect(find.text('Prime Shields (Brave)'), findsOneWidget);
-    expect(find.text('Edge Copilot AI'), findsOneWidget);
+    expect(find.text('Prime Shields'), findsOneWidget);
+    expect(find.text('Pi AI'), findsOneWidget);
     expect(find.text('Find in Page'), findsOneWidget);
     expect(find.text('Inspect Element (Mobile DevTools)'), findsOneWidget);
   });
@@ -395,5 +398,42 @@ void main() {
     expect(find.text('Bookmarks & Collections'), findsOneWidget);
     expect(find.text('Open Tabs Mirroring'), findsOneWidget);
   });
+
+  testWidgets('Pi AI Assistant Sheet smoke test with Pi AI branding', (WidgetTester tester) async {
+    final copilotService = AiCopilotService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CopilotSheet(
+            copilotService: copilotService,
+            pageTitle: 'Test Article',
+            pageContent: 'This is an informative test article about advanced Flutter widgets.',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify Pi AI branding in header, hint, and prompt chips
+    expect(find.text('Pi AI Assistant'), findsOneWidget);
+    expect(find.text('Ask Pi AI anything about this page...'), findsOneWidget);
+    expect(find.text('📌 3-Bullet Summary'), findsOneWidget);
+
+    // Verify external/legacy names are not present
+    expect(find.text('Edge Copilot AI'), findsNothing);
+  });
+
+  test('AiCopilotService extractive summary Pi AI branding test', () async {
+    final copilotService = AiCopilotService();
+    final summary = await copilotService.summarize(
+      'Flutter is a cross-platform framework for building native mobile applications. It compiles to machine code directly.',
+      title: 'Flutter Overview',
+    );
+    expect(summary.contains('Pi AI'), true);
+    expect(summary.contains('Edge Copilot'), false);
+    expect(summary.contains('Gemini'), false);
+  });
 }
+
 

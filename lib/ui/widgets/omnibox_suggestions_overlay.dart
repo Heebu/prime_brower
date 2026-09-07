@@ -53,7 +53,7 @@ class OmniboxSuggestionsOverlay extends StatelessWidget {
                 icon: Icons.search_rounded,
                 iconColor: Colors.blueAccent,
                 title: query.trim(),
-                subtitle: 'Search Google for "$query"',
+                subtitle: 'Search web for "$query"',
                 isDark: isIncognito,
                 onTap: () => onSelect(query.trim()),
                 onQuickFill: () => onQuickFill(query.trim()),

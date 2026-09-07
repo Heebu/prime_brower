@@ -32,7 +32,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
   final Map<String, String> _searchEngines = {
     'Google': 'https://www.google.com/search?q=',
     'DuckDuckGo': 'https://duckduckgo.com/?q=',
-    'Brave Search': 'https://search.brave.com/search?q=',
+    'Private Search': 'https://search.brave.com/search?q=',
     'Bing': 'https://www.bing.com/search?q=',
   };
 
@@ -249,7 +249,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               Icon(
                                 engine == 'DuckDuckGo'
                                     ? Icons.shield_rounded
-                                    : (engine == 'Brave Search' ? Icons.security : Icons.search),
+                                    : (engine == 'Private Search' ? Icons.security : Icons.search),
                                 size: 18,
                                 color: Colors.blueAccent,
                               ),
@@ -334,7 +334,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
               ),
               const SizedBox(height: 24),
 
-              // Brave Shields Privacy Metrics Card (Tappable to view detailed shield logs & whitelist)
+              // Prime Shields Privacy Metrics Card (Tappable to view detailed shield logs & whitelist)
               AnimatedPressable(
                 scaleFactor: 0.98,
                 onTap: () {
@@ -389,7 +389,7 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                'Prime Shields (Brave Privacy)',
+                                'Prime Privacy Shields',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,

@@ -77,9 +77,9 @@ class SpeedDialItem {
           color: Color(0xFFFF9900),
         ),
         const SpeedDialItem(
-          id: 'copilot',
-          title: 'AI Copilot',
-          url: 'https://gemini.google.com',
+          id: 'pi_ai',
+          title: 'Pi AI',
+          url: 'prime://pi_ai',
           iconData: Icons.auto_awesome_rounded,
           color: Color(0xFF8B5CF6),
         ),

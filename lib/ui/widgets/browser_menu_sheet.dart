@@ -44,7 +44,7 @@ class BrowserMenuSheet extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Top quick action buttons (Chrome / Edge style)
+              // Top quick action buttons
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -130,10 +130,10 @@ class BrowserMenuSheet extends StatelessWidget {
               ),
               const Divider(height: 1),
 
-              // Shields Status tile (Brave style)
+              // Shields Status tile
               ListTile(
                 leading: const Icon(Icons.shield, color: Colors.deepOrangeAccent),
-                title: const Text('Prime Shields (Brave)'),
+                title: const Text('Prime Shields'),
                 subtitle: Text(
                   shieldsService.shieldsEnabled
                       ? 'Active • ${shieldsService.blockedElementsCount} trackers & ads blocked'
@@ -157,10 +157,10 @@ class BrowserMenuSheet extends StatelessWidget {
                     : null,
               ),
 
-              // Edge Copilot AI Assistant
+              // Pi AI Assistant
               ListTile(
                 leading: const Icon(Icons.auto_awesome, color: Colors.purple),
-                title: const Text('Edge Copilot AI'),
+                title: const Text('Pi AI'),
                 subtitle: const Text('Summarize page, ask questions, explain simply'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
@@ -256,10 +256,10 @@ class BrowserMenuSheet extends StatelessWidget {
 
               const Divider(height: 1),
 
-              // Edge Productivity: Reader Mode
+              // Productivity: Reader Mode
               ListTile(
                 leading: const Icon(Icons.article_outlined, color: Colors.indigo),
-                title: const Text('Immersive Reader Mode (Edge)'),
+                title: const Text('Immersive Reader Mode'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () async {
                   final messenger = ScaffoldMessenger.of(context);

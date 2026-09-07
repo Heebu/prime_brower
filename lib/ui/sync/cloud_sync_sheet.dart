@@ -140,7 +140,7 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
 
                   const Divider(height: 32),
 
-                  // Tabs From Other Devices (Chrome/Edge Feature)
+                  // Tabs From Other Devices
                   const Row(
                     children: [
                       Icon(Icons.devices, size: 18, color: Colors.blueAccent),

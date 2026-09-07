@@ -120,7 +120,7 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
           ),
         ),
 
-        // Chrome-style Pull-down Floating Reload Disc
+        // Pull-down Floating Reload Disc
         if (_dragOffset > 0 || _isRefreshing)
           Positioned(
             top: math.max(12.0, _dragOffset - 36),

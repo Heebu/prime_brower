@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
+typedef PiAiService = AiCopilotService;
+
 class AiCopilotService with ChangeNotifier {
   String? _geminiApiKey;
 
+  String? get apiKey => _geminiApiKey;
   String? get geminiApiKey => _geminiApiKey;
   bool get hasApiKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
 
@@ -21,7 +24,7 @@ class AiCopilotService with ChangeNotifier {
 
     if (hasApiKey) {
       final prompt = '''
-You are the Edge Copilot browser assistant. Analyze the following webpage content titled "$title".
+You are Pi AI, the intelligent browser assistant. Analyze the following webpage content titled "$title".
 Provide:
 1. A 1-sentence executive overview.
 2. Exactly three high-impact bullet points capturing the core takeaways.
@@ -47,7 +50,7 @@ $pageContent
 
     if (hasApiKey) {
       final prompt = '''
-You are the Edge Copilot AI browser assistant. The user is browsing a webpage with this content:
+You are Pi AI, the intelligent browser assistant. The user is browsing a webpage with this content:
 """
 $pageContent
 """
@@ -156,7 +159,7 @@ $pageContent
     }
 
     buffer.writeln(
-      '\n💡 *Powered by Smart Local Extractive AI. Add a Gemini API key in Copilot settings for generative synthesis.*',
+      '\n💡 *Powered by Smart Local Extractive AI. Add an API key in Pi AI settings for generative synthesis.*',
     );
     return buffer.toString();
   }
@@ -182,10 +185,10 @@ $pageContent
     }
 
     if (bestSentence != null && maxMatches > 0) {
-      return '🔎 **Found relevant passage:**\n\n"$bestSentence"\n\n*(Add a Gemini API key for conversational AI answers).*';
+      return '🔎 **Found relevant passage:**\n\n"$bestSentence"\n\n*(Add an API key for conversational AI answers).*';
     }
 
-    return 'I could not find a direct answer in this article for "$question". Try refining your keywords or connecting a Gemini API key in Copilot settings.';
+    return 'I could not find a direct answer in this article for "$question". Try refining your keywords or connecting an API key in Pi AI settings.';
   }
 
   String _localExplainSimply(String content) {

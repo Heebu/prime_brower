@@ -27,7 +27,7 @@ class BrowserManager with ChangeNotifier {
   // Search and Browsing History
   final List<String> _searchHistory = [
     'Flutter 3.44 release notes',
-    'Brave browser features',
+    'Prime browser features',
     'Dart devtools inspect element',
     'TechCrunch mobile news',
   ];
@@ -60,7 +60,7 @@ class BrowserManager with ChangeNotifier {
     });
   }
 
-  // Memory Saver (Chrome / Brave Tab Hibernation)
+  // Memory Saver (Tab Hibernation)
   bool _memorySaverEnabled = true;
   bool get memorySaverEnabled => _memorySaverEnabled;
   int get frozenTabsCount => currentTabs.where((t) => t.isFrozen).length;
@@ -128,7 +128,7 @@ class BrowserManager with ChangeNotifier {
       return 'https://$trimmed';
     }
 
-    // Default to Google search
+    // Default to search engine
     return 'https://www.google.com/search?q=${Uri.encodeComponent(trimmed)}';
   }
 

@@ -10,7 +10,7 @@ class WebTab {
   int progress;
   bool devToolsInjected;
 
-  // Memory Hibernation (Chrome / Brave Memory Saver)
+  // Memory Hibernation (Tab Memory Saver)
   bool isFrozen;
   DateTime lastActiveTime;
   final int estimatedMemorySavedMb;
