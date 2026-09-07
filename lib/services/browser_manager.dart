@@ -1,10 +1,18 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/web_tab.dart';
 import '../models/bookmark.dart';
 import 'shields_service.dart';
+import 'firebase_auth_service.dart';
+import 'firebase_sync_service.dart';
+
+import 'download_service.dart';
 
 class BrowserManager with ChangeNotifier {
   final ShieldsService shieldsService;
+  final DownloadService downloadService;
+  final FirebaseAuthService? authService;
+  final FirebaseSyncService? syncService;
 
   final List<WebTab> _normalTabs = [];
   final List<WebTab> _incognitoTabs = [];
@@ -13,16 +21,40 @@ class BrowserManager with ChangeNotifier {
   bool _isIncognito = false;
 
   final List<Bookmark> _bookmarks = [];
+  StreamSubscription<List<Bookmark>>? _bookmarksSubscription;
 
-  BrowserManager({required this.shieldsService}) {
-    // Open default initial normal tab
-    openNewTab('https://www.google.com', incognito: false);
+  BrowserManager({
+    required this.shieldsService,
+    DownloadService? downloadService,
+    this.authService,
+    this.syncService,
+  }) : downloadService = downloadService ?? DownloadService() {
+    // Open default initial normal tab on start dashboard
+    openNewTab('prime://newtab', incognito: false);
+    _initCloudSync();
+  }
+
+  void _initCloudSync() {
+    authService?.addListener(() {
+      final user = authService?.currentUser;
+      _bookmarksSubscription?.cancel();
+      if (user != null && syncService != null) {
+        _bookmarksSubscription = syncService!.streamBookmarks(user.uid).listen((cloudBookmarks) {
+          _bookmarks.clear();
+          _bookmarks.addAll(cloudBookmarks);
+          notifyListeners();
+        });
+        syncOpenTabsToCloud();
+      }
+    });
   }
 
   // Getters
   bool get isIncognito => _isIncognito;
   List<WebTab> get normalTabs => List.unmodifiable(_normalTabs);
   List<WebTab> get incognitoTabs => List.unmodifiable(_incognitoTabs);
+  int get normalTabIndex => _normalTabIndex;
+  int get incognitoTabIndex => _incognitoTabIndex;
   List<Bookmark> get bookmarks => List.unmodifiable(_bookmarks);
 
   List<WebTab> get currentTabs => _isIncognito ? _incognitoTabs : _normalTabs;
@@ -39,7 +71,7 @@ class BrowserManager with ChangeNotifier {
 
   String sanitizeInput(String input) {
     final trimmed = input.trim();
-    if (trimmed.isEmpty) return 'https://www.google.com';
+    if (trimmed.isEmpty || trimmed == 'prime://newtab') return 'prime://newtab';
 
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
@@ -157,23 +189,43 @@ class BrowserManager with ChangeNotifier {
   }
 
   void addBookmark(String title, String url, {bool isCollection = false, String? collectionName}) {
-    _bookmarks.insert(
-      0,
-      Bookmark(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: title.isNotEmpty ? title : url,
-        url: url,
-        createdAt: DateTime.now(),
-        isCollection: isCollection,
-        collectionName: collectionName,
-      ),
+    final bookmark = Bookmark(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title.isNotEmpty ? title : url,
+      url: url,
+      createdAt: DateTime.now(),
+      isCollection: isCollection,
+      collectionName: collectionName,
     );
+
+    _bookmarks.insert(0, bookmark);
     notifyListeners();
+
+    final user = authService?.currentUser;
+    if (user != null && syncService != null) {
+      syncService!.uploadBookmark(user.uid, bookmark);
+    }
   }
 
   void removeBookmark(String id) {
     _bookmarks.removeWhere((item) => item.id == id);
     notifyListeners();
+
+    final user = authService?.currentUser;
+    if (user != null && syncService != null) {
+      syncService!.deleteBookmark(user.uid, id);
+    }
+  }
+
+  void syncOpenTabsToCloud([String deviceName = 'Mobile Device']) {
+    final user = authService?.currentUser;
+    if (user != null && syncService != null) {
+      final tabData = _normalTabs.map((t) => {
+        'title': t.title.isNotEmpty ? t.title : 'New Tab',
+        'url': t.url,
+      }).toList();
+      syncService!.syncOpenTabs(user.uid, deviceName, tabData);
+    }
   }
 
   bool isBookmarked(String url) {

@@ -12,6 +12,8 @@ class BrowserMenuSheet extends StatelessWidget {
   final ShieldsService shieldsService;
   final VoidCallback onOpenCopilot;
   final VoidCallback onFindInPage;
+  final VoidCallback onOpenSync;
+  final VoidCallback onOpenDownloads;
 
   const BrowserMenuSheet({
     Key? key,
@@ -19,6 +21,8 @@ class BrowserMenuSheet extends StatelessWidget {
     required this.shieldsService,
     required this.onOpenCopilot,
     required this.onFindInPage,
+    required this.onOpenSync,
+    required this.onOpenDownloads,
   }) : super(key: key);
 
   @override
@@ -92,6 +96,30 @@ class BrowserMenuSheet extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const Divider(height: 1),
+
+              // Prime Cloud Sync Account tile
+              ListTile(
+                leading: Icon(
+                  browserManager.authService?.isAuthenticated == true
+                      ? Icons.cloud_done
+                      : Icons.cloud_outlined,
+                  color: browserManager.authService?.isAuthenticated == true
+                      ? Colors.green
+                      : Colors.blueAccent,
+                ),
+                title: const Text('Prime Cloud Sync'),
+                subtitle: Text(
+                  browserManager.authService?.isAuthenticated == true
+                      ? 'Signed in as ${browserManager.authService?.userDisplayName}'
+                      : 'Sign in to sync tabs & bookmarks',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  onOpenSync();
+                },
               ),
               const Divider(height: 1),
 
@@ -239,6 +267,47 @@ class BrowserMenuSheet extends StatelessWidget {
                 },
               ),
 
+              // Downloads Manager
+              ListTile(
+                leading: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.download_rounded, color: Colors.blueAccent),
+                    if (browserManager.downloadService.activeDownloadsCount > 0)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                          child: Text(
+                            '${browserManager.downloadService.activeDownloadsCount}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                title: const Text('Downloads'),
+                subtitle: browserManager.downloadService.activeDownloadsCount > 0
+                    ? Text('${browserManager.downloadService.activeDownloadsCount} downloading...')
+                    : null,
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  onOpenDownloads();
+                },
+              ),
+
               // Incognito Tab Action
               ListTile(
                 leading: const Icon(Icons.security, color: Colors.black87),
@@ -246,7 +315,7 @@ class BrowserMenuSheet extends StatelessWidget {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pop(context);
-                  browserManager.openNewTab('https://www.google.com', incognito: true);
+                  browserManager.openNewTab('prime://newtab', incognito: true);
                 },
               ),
             ],

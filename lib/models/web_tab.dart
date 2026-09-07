@@ -9,7 +9,9 @@ class WebTab {
   bool isLoading;
   int progress;
   bool devToolsInjected;
-  late final WebViewController controller;
+
+  WebViewController? _controller;
+  final void Function(WebViewController controller)? onPageFinishedCallback;
 
   // Callbacks for notifying state listeners
   final void Function(String url)? onUrlChanged;
@@ -29,44 +31,9 @@ class WebTab {
     this.onTitleChanged,
     this.onLoadingChanged,
     this.onProgressChanged,
-    void Function(WebViewController controller)? onPageFinishedCallback,
+    this.onPageFinishedCallback,
   }) {
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int p) {
-            progress = p;
-            onProgressChanged?.call(p);
-          },
-          onPageStarted: (String currentUrl) {
-            url = currentUrl;
-            isLoading = true;
-            onUrlChanged?.call(currentUrl);
-            onLoadingChanged?.call(true);
-          },
-          onPageFinished: (String currentUrl) async {
-            url = currentUrl;
-            isLoading = false;
-            try {
-              final pageTitle = await controller.getTitle();
-              if (pageTitle != null && pageTitle.isNotEmpty) {
-                title = pageTitle;
-                onTitleChanged?.call(title);
-              }
-            } catch (_) {}
-            onUrlChanged?.call(currentUrl);
-            onLoadingChanged?.call(false);
-            onPageFinishedCallback?.call(controller);
-          },
-          onWebResourceError: (WebResourceError error) {
-            isLoading = false;
-            onLoadingChanged?.call(false);
-          },
-        ),
-      );
-
-    if (url.isNotEmpty) {
+    if (url.isNotEmpty && url != 'prime://newtab') {
       final initialUri = Uri.tryParse(url);
       if (initialUri != null) {
         controller.loadRequest(initialUri);
@@ -74,8 +41,69 @@ class WebTab {
     }
   }
 
+  bool get isNewTabPage => url.isEmpty || url == 'prime://newtab' || url == 'about:blank';
+
+  WebViewController get controller {
+    if (_controller == null) {
+      _initController();
+    }
+    return _controller!;
+  }
+
+  void _initController() {
+    try {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int p) {
+              progress = p;
+              onProgressChanged?.call(p);
+            },
+            onPageStarted: (String currentUrl) {
+              url = currentUrl;
+              isLoading = true;
+              onUrlChanged?.call(currentUrl);
+              onLoadingChanged?.call(true);
+            },
+            onPageFinished: (String currentUrl) async {
+              url = currentUrl;
+              isLoading = false;
+              try {
+                final pageTitle = await _controller?.getTitle();
+                if (pageTitle != null && pageTitle.isNotEmpty) {
+                  title = pageTitle;
+                  onTitleChanged?.call(title);
+                }
+              } catch (_) {}
+              onUrlChanged?.call(currentUrl);
+              onLoadingChanged?.call(false);
+              if (_controller != null) {
+                onPageFinishedCallback?.call(_controller!);
+              }
+            },
+            onWebResourceError: (WebResourceError error) {
+              isLoading = false;
+              onLoadingChanged?.call(false);
+            },
+          ),
+        );
+    } catch (e) {
+      debugPrint('WebView controller init notice: $e');
+    }
+  }
+
   void loadUrl(String newUrl) {
     url = newUrl;
+    if (newUrl == 'prime://newtab') {
+      title = 'New Tab';
+      isLoading = false;
+      progress = 0;
+      onUrlChanged?.call(newUrl);
+      onTitleChanged?.call(title);
+      onLoadingChanged?.call(false);
+      return;
+    }
     final uri = Uri.tryParse(newUrl);
     if (uri != null) {
       controller.loadRequest(uri);
@@ -83,11 +111,11 @@ class WebTab {
   }
 
   void reload() {
-    controller.reload();
+    _controller?.reload();
   }
 
-  Future<bool> canGoBack() => controller.canGoBack();
-  Future<bool> canGoForward() => controller.canGoForward();
-  Future<void> goBack() => controller.goBack();
-  Future<void> goForward() => controller.goForward();
+  Future<bool> canGoBack() async => (await _controller?.canGoBack()) ?? false;
+  Future<bool> canGoForward() async => (await _controller?.canGoForward()) ?? false;
+  Future<void> goBack() async => await _controller?.goBack();
+  Future<void> goForward() async => await _controller?.goForward();
 }

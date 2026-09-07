@@ -4,6 +4,8 @@ import 'services/browser_manager.dart';
 import 'services/shields_service.dart';
 import 'services/ai_copilot_service.dart';
 import 'services/devtools_service.dart';
+import 'services/firebase_auth_service.dart';
+import 'services/firebase_sync_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
 import 'ui/widgets/bottom_nav_bar.dart';
@@ -11,6 +13,8 @@ import 'ui/widgets/browser_menu_sheet.dart';
 import 'ui/tabs/tab_grid_screen.dart';
 import 'ui/copilot/copilot_sheet.dart';
 import 'ui/productivity/find_in_page_bar.dart';
+import 'ui/sync/cloud_sync_sheet.dart';
+import 'ui/downloads/downloads_screen.dart';
 import 'core/design_system/responsive_layout.dart';
 
 class BrowserHomePage extends StatefulWidget {
@@ -22,6 +26,8 @@ class BrowserHomePage extends StatefulWidget {
 
 class _BrowserHomePageState extends State<BrowserHomePage> {
   late final ShieldsService _shieldsService;
+  late final FirebaseAuthService _authService;
+  late final FirebaseSyncService _syncService;
   late final BrowserManager _browserManager;
   late final AiCopilotService _copilotService;
   bool _isFindInPageActive = false;
@@ -30,7 +36,13 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
   void initState() {
     super.initState();
     _shieldsService = ShieldsService();
-    _browserManager = BrowserManager(shieldsService: _shieldsService);
+    _authService = FirebaseAuthService();
+    _syncService = FirebaseSyncService();
+    _browserManager = BrowserManager(
+      shieldsService: _shieldsService,
+      authService: _authService,
+      syncService: _syncService,
+    );
     _copilotService = AiCopilotService();
   }
 
@@ -67,6 +79,28 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
     setState(() => _isFindInPageActive = true);
   }
 
+  void _openSyncSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CloudSyncSheet(
+        authService: _authService,
+        syncService: _syncService,
+        browserManager: _browserManager,
+      ),
+    );
+  }
+
+  void _openDownloads() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DownloadsScreen(downloadService: _browserManager.downloadService),
+      ),
+    );
+  }
+
   void _openMenuSheet() {
     showModalBottomSheet(
       context: context,
@@ -77,6 +111,8 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
         shieldsService: _shieldsService,
         onOpenCopilot: _openCopilot,
         onFindInPage: _openFindInPage,
+        onOpenSync: _openSyncSheet,
+        onOpenDownloads: _openDownloads,
       ),
     );
   }
@@ -99,6 +135,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
             onOpenMenu: _openMenuSheet,
             onOpenCopilot: _openCopilot,
             onFindInPage: _openFindInPage,
+            onOpenSync: _openSyncSheet,
           ),
           body: Column(
             children: [
@@ -142,7 +179,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
-                              onPressed: () => _browserManager.openNewTab('https://www.google.com'),
+                              onPressed: () => _browserManager.openNewTab('prime://newtab'),
                               icon: const Icon(Icons.add),
                               label: Text(isIncognito ? 'Open Incognito Tab' : 'Open New Tab'),
                             ),
@@ -152,7 +189,12 @@ class _BrowserHomePageState extends State<BrowserHomePage> {
                     : IndexedStack(
                         index: _browserManager.currentTabIndex,
                         children: tabs.map((tab) {
-                          return WebViewPage(key: ValueKey(tab.id), tab: tab);
+                          return WebViewPage(
+                            key: ValueKey(tab.id),
+                            tab: tab,
+                            browserManager: _browserManager,
+                            shieldsService: _shieldsService,
+                          );
                         }).toList(),
                       ),
               ),

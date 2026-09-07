@@ -11,6 +11,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
   final VoidCallback onOpenMenu;
   final VoidCallback onOpenCopilot;
   final VoidCallback onFindInPage;
+  final VoidCallback onOpenSync;
 
   const OmniboxAppBar({
     Key? key,
@@ -19,6 +20,7 @@ class OmniboxAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onOpenMenu,
     required this.onOpenCopilot,
     required this.onFindInPage,
+    required this.onOpenSync,
   }) : super(key: key);
 
   @override
@@ -36,7 +38,8 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
   void initState() {
     super.initState();
     final tab = widget.browserManager.currentTab;
-    _controller = TextEditingController(text: tab?.url ?? '');
+    final isNewTab = tab == null || tab.url == 'prime://newtab';
+    _controller = TextEditingController(text: isNewTab ? '' : tab.url);
   }
 
   @override
@@ -44,8 +47,9 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
     super.didUpdateWidget(oldWidget);
     if (!_focusNode.hasFocus) {
       final tab = widget.browserManager.currentTab;
-      if (tab != null && _controller.text != tab.url) {
-        _controller.text = tab.url;
+      final expected = (tab == null || tab.url == 'prime://newtab') ? '' : tab.url;
+      if (_controller.text != expected) {
+        _controller.text = expected;
       }
     }
   }
@@ -114,6 +118,7 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
   Widget build(BuildContext context) {
     final tab = widget.browserManager.currentTab;
     final isIncognito = widget.browserManager.isIncognito;
+    final isNewTab = tab == null || tab.url == 'prime://newtab';
     final isHttps = tab != null && tab.url.startsWith('https://');
 
     return AppBar(
@@ -132,14 +137,18 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
             // SSL / Security Lock Icon
             IconButton(
               icon: Icon(
-                isIncognito
-                    ? Icons.security
-                    : (isHttps ? Icons.lock : Icons.search),
+                isNewTab
+                    ? Icons.search
+                    : (isIncognito
+                        ? Icons.security
+                        : (isHttps ? Icons.lock : Icons.info_outline)),
                 size: 18,
-                color: isHttps ? Colors.green : (isIncognito ? Colors.white70 : Colors.grey[700]),
+                color: isNewTab
+                    ? (isIncognito ? Colors.white54 : Colors.grey[600])
+                    : (isHttps ? Colors.green : (isIncognito ? Colors.white70 : Colors.orange)),
               ),
-              tooltip: 'Site Information',
-              onPressed: _showSecurityInfo,
+              tooltip: isNewTab ? 'Search' : 'Site Information',
+              onPressed: isNewTab ? null : _showSecurityInfo,
             ),
             // Omnibox URL Input
             Expanded(
@@ -237,6 +246,20 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
               ],
             ),
           ),
+        ),
+        // Cloud Sync / Account Button
+        IconButton(
+          icon: Icon(
+            widget.browserManager.authService?.isAuthenticated == true
+                ? Icons.cloud_done
+                : Icons.cloud_outlined,
+            size: 20,
+            color: widget.browserManager.authService?.isAuthenticated == true
+                ? Colors.green
+                : null,
+          ),
+          tooltip: 'Prime Cloud Sync',
+          onPressed: widget.onOpenSync,
         ),
         IconButton(
           icon: Icon(

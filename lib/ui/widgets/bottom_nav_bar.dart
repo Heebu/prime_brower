@@ -54,7 +54,7 @@ class BottomNavBar extends StatelessWidget {
               icon: const Icon(Icons.home_outlined, size: 24),
               tooltip: 'Home',
               color: isIncognito ? Colors.white70 : null,
-              onPressed: () => browserManager.navigateCurrentTab('https://www.google.com'),
+              onPressed: () => browserManager.navigateCurrentTab('prime://newtab'),
             ),
             // Tab Switcher with live badge
             Stack(
