@@ -31,6 +31,7 @@ import 'package:prime_brower/services/connectivity_banner_service.dart';
 import 'package:prime_brower/ui/widgets/browser_banner_widget.dart';
 import 'package:prime_brower/ui/widgets/banner_simulator_sheet.dart';
 import 'package:prime_brower/ui/offline/prime_runner_screen.dart';
+import 'package:prime_brower/ui/auth/auth_dialog.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1297,7 +1298,67 @@ void main() {
     // Crucially, onQueryChanged should NOT have triggered setState during build
     expect(setStateCalledDuringBuild, false);
   });
+
+  test('FirebaseAuthService guest defaults and validation test', () {
+    final authService = FirebaseAuthService();
+    expect(authService.isAuthenticated, false);
+    expect(authService.currentUser, isNull);
+    expect(authService.userDisplayName, 'Guest');
+    expect(authService.userEmail, 'Not signed in');
+    expect(authService.isGoogleUser, false);
+    expect(authService.userPhotoUrl, isNull);
+  });
+
+  testWidgets('AuthDialog smoke test with Email/Password, Forgot Password, and Google Sign-in', (WidgetTester tester) async {
+    final authService = FirebaseAuthService();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: ElevatedButton(
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => AuthDialog(authService: authService),
+                ),
+                child: const Text('Open Dialog'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Open AuthDialog
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+
+    // Verify all essential authentication options are present
+    expect(find.text('Prime Cloud Sync'), findsOneWidget);
+    expect(find.text('Sign In'), findsNWidgets(2)); // Switcher pill and submit button
+    expect(find.text('Create Account'), findsOneWidget); // Switcher pill
+    expect(find.text('Forgot password?'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('1-Tap Guest Sign-in (Test Mode)'), findsOneWidget);
+
+    // Switch to Create Account mode
+    await tester.tap(find.text('Create Account'));
+    await tester.pumpAndSettle();
+
+    // Forgot password link should NOT be present in Create Account mode
+    expect(find.text('Forgot password?'), findsNothing);
+    expect(find.text('Create Account'), findsNWidgets(2)); // Switcher pill and submit button
+
+    // Switch back to Sign In mode
+    await tester.tap(find.text('Sign In').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Forgot password?'), findsOneWidget);
+  });
 }
+
 
 
 
