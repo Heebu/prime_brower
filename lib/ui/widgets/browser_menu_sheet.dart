@@ -9,6 +9,7 @@ import '../devtools/js_console_dialog.dart';
 import '../productivity/reader_mode_screen.dart';
 import '../productivity/bookmarks_screen.dart';
 import 'notification_settings_sheet.dart';
+import 'banner_simulator_sheet.dart';
 
 class BrowserMenuSheet extends StatelessWidget {
   final BrowserManager browserManager;
@@ -462,6 +463,27 @@ class BrowserMenuSheet extends StatelessWidget {
                     isScrollControlled: true,
                     backgroundColor: Colors.transparent,
                     builder: (_) => const NotificationSettingsSheet(),
+                  );
+                },
+              ),
+
+              // In-Browser Banners & Alerts
+              ListTile(
+                leading: const Icon(Icons.announcement_outlined, color: Colors.blueAccent),
+                title: const Text('Banners & Network Alerts'),
+                subtitle: const Text('Slow network, offline runner, security & errors'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  final currentTabId = currentTab?.id ?? 'tab_active';
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => BannerSimulatorSheet(
+                      activeTabId: currentTabId,
+                      onReloadTab: () => currentTab?.reload(),
+                    ),
                   );
                 },
               ),

@@ -23,6 +23,11 @@ import 'package:prime_brower/ui/new_tab/new_tab_dashboard.dart';
 import 'package:prime_brower/ui/copilot/copilot_sheet.dart';
 import 'package:prime_brower/services/notification_service.dart';
 import 'package:prime_brower/ui/widgets/notification_settings_sheet.dart';
+import 'package:prime_brower/models/browser_banner.dart';
+import 'package:prime_brower/services/connectivity_banner_service.dart';
+import 'package:prime_brower/ui/widgets/browser_banner_widget.dart';
+import 'package:prime_brower/ui/widgets/banner_simulator_sheet.dart';
+import 'package:prime_brower/ui/offline/prime_runner_screen.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -806,6 +811,225 @@ void main() {
 
     // Verify NotificationSettingsSheet modal is opened
     expect(find.byType(NotificationSettingsSheet), findsOneWidget);
+  });
+
+  test('ConnectivityBannerService unit tests: offline, slow network, page error, scam warning, insecure HTTP, permissions', () {
+    final service = ConnectivityBannerService.instance;
+    const tabId = 'test_banner_tab';
+
+    service.clearBanners(tabId);
+    expect(service.getBannersForTab(tabId).isEmpty, true);
+
+    // 1. No Network Banner
+    bool retryCalled = false;
+    bool gameCalled = false;
+    service.showNoNetworkBanner(
+      tabId,
+      onRetry: () => retryCalled = true,
+      onPlayGame: () => gameCalled = true,
+    );
+    expect(service.getBannersForTab(tabId).length, 1);
+    final noNetBanner = service.getBannersForTab(tabId).first;
+    expect(noNetBanner.type, BannerType.noNetwork);
+    expect(noNetBanner.title, 'No Internet Connection');
+    expect(noNetBanner.primaryActionLabel, 'Play Game');
+    expect(noNetBanner.secondaryActionLabel, 'Retry');
+
+    noNetBanner.onPrimaryAction?.call();
+    noNetBanner.onSecondaryAction?.call();
+    expect(gameCalled, true);
+    expect(retryCalled, true);
+
+    // 2. Slow Network Banner
+    bool reloadLiteCalled = false;
+    service.showSlowNetworkBanner(tabId, onReloadLite: () => reloadLiteCalled = true);
+    final slowBanner = service.getBannersForTab(tabId).firstWhere((b) => b.type == BannerType.slowNetwork);
+    expect(slowBanner.title, 'Slow Network Connection');
+    expect(slowBanner.primaryActionLabel, 'Reload Lite');
+    slowBanner.onPrimaryAction?.call();
+    expect(reloadLiteCalled, true);
+
+    // 3. Page Error Banner
+    service.showPageErrorBanner(
+      tabId,
+      errorDescription: 'ERR_NAME_NOT_RESOLVED: Server DNS error',
+      onRetry: () {},
+    );
+    final errBanner = service.getBannersForTab(tabId).firstWhere((b) => b.type == BannerType.pageError);
+    expect(errBanner.title, 'Page Load Failed');
+    expect(errBanner.message, contains('ERR_NAME_NOT_RESOLVED'));
+
+    // 4. Scam / Security Warning
+    bool backToSafetyCalled = false;
+    final isSafe = service.evaluateUrlSecurity(
+      tabId,
+      'https://paypa1-security-verify.com/login',
+      onBackToSafety: () => backToSafetyCalled = true,
+    );
+    expect(isSafe, false);
+    final scamBanner = service.getBannersForTab(tabId).firstWhere((b) => b.type == BannerType.securityWarning);
+    expect(scamBanner.title, 'Deceptive Site / Privacy Risk');
+    expect(scamBanner.primaryActionLabel, 'Back to Safety');
+    scamBanner.onPrimaryAction?.call();
+    expect(backToSafetyCalled, true);
+
+    // 5. Insecure HTTP Warning
+    service.checkInsecureHttp(
+      tabId,
+      'http://insecure-example.org',
+      onUpgradeHttps: () {},
+    );
+    final httpBanner = service.getBannersForTab(tabId).firstWhere((b) => b.type == BannerType.insecureHttp);
+    expect(httpBanner.title, 'Not Secure (HTTP)');
+    expect(httpBanner.primaryActionLabel, 'Use HTTPS');
+
+    // 6. Permission Request Banner
+    bool allowCalled = false;
+    bool blockCalled = false;
+    service.requestPermission(
+      tabId,
+      domain: 'maps.google.com',
+      permission: PermissionType.location,
+      onAllow: () => allowCalled = true,
+      onBlock: () => blockCalled = true,
+    );
+    final permBanner = service.getBannersForTab(tabId).firstWhere((b) => b.type == BannerType.permission);
+    expect(permBanner.title, 'Permission Request');
+    expect(permBanner.message, contains('Location'));
+    permBanner.onPrimaryAction?.call();
+    permBanner.onSecondaryAction?.call();
+    expect(allowCalled, true);
+    expect(blockCalled, true);
+
+    // 7. Clear banners
+    service.clearBanners(tabId);
+    expect(service.getBannersForTab(tabId).isEmpty, true);
+  });
+
+  testWidgets('BrowserBannerWidget smoke and interaction test', (WidgetTester tester) async {
+    bool primaryClicked = false;
+    bool dismissClicked = false;
+
+    final banner = BrowserBanner(
+      id: 'test_banner',
+      type: BannerType.slowNetwork,
+      title: 'Slow Network Alert',
+      message: 'Page is loading slowly. Tap to reload lite version.',
+      icon: Icons.speed_rounded,
+      accentColor: const Color(0xFFFB923C),
+      primaryActionLabel: 'Reload Lite',
+      onPrimaryAction: () => primaryClicked = true,
+      secondaryActionLabel: 'Wait',
+      onDismiss: () => dismissClicked = true,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserBannerWidget(
+            banner: banner,
+            onDismiss: () => dismissClicked = true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify UI components
+    expect(find.text('Slow Network Alert'), findsOneWidget);
+    expect(find.text('Page is loading slowly. Tap to reload lite version.'), findsOneWidget);
+    expect(find.text('Reload Lite'), findsOneWidget);
+    expect(find.text('Wait'), findsOneWidget);
+
+    // Tap Primary Action
+    await tester.tap(find.text('Reload Lite'));
+    await tester.pump();
+    expect(primaryClicked, true);
+
+    // Tap Dismiss button (close icon)
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+    expect(dismissClicked, true);
+  });
+
+  testWidgets('PrimeRunnerScreen interactive offline mini-game test', (WidgetTester tester) async {
+    bool retryCalled = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PrimeRunnerScreen(
+          isOnline: false,
+          onRetryConnection: () => retryCalled = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify initial game elements
+    expect(find.text('PRIME CYBER RUNNER'), findsNWidgets(2)); // HUD & Ready Overlay
+    expect(find.text('Offline Mode'), findsOneWidget);
+    expect(find.text('SCORE: 0'), findsOneWidget);
+    expect(find.text('START RUN'), findsOneWidget);
+
+    // Tap START RUN
+    await tester.tap(find.text('START RUN'));
+    await tester.pump();
+
+    // Jump by tapping on the game area
+    await tester.tap(find.byType(GestureDetector).first);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Tap Reload button on top bar
+    await tester.tap(find.text('Reload'));
+    await tester.pump();
+    expect(retryCalled, true);
+  });
+
+  testWidgets('BrowserMenuSheet Banners & Network Alerts navigation test', (WidgetTester tester) async {
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserMenuSheet(
+            browserManager: manager,
+            shieldsService: shields,
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenDownloads: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Banners & Network Alerts tile is in menu
+    expect(find.text('Banners & Network Alerts'), findsOneWidget);
+    expect(find.text('Slow network, offline runner, security & errors'), findsOneWidget);
+
+    // Scroll to it and tap
+    await tester.ensureVisible(find.text('Banners & Network Alerts'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Banners & Network Alerts'));
+    await tester.pumpAndSettle();
+
+    // Verify BannerSimulatorSheet modal is opened
+    expect(find.byType(BannerSimulatorSheet), findsOneWidget);
+    expect(find.text('Prime Cyber Runner'), findsOneWidget);
+    expect(find.text('No Network Banner'), findsOneWidget);
+    expect(find.text('Slow Network Banner'), findsOneWidget);
+    expect(find.text('Page Error Banner'), findsOneWidget);
+    expect(find.text('Scam / Security Warning'), findsOneWidget);
+
+    // Tap No Network Banner chip
+    await tester.tap(find.text('No Network Banner'));
+    await tester.pumpAndSettle();
+
+    // Verify banner was registered for the active tab
+    final banners = ConnectivityBannerService.instance.getBannersForTab(manager.currentTab!.id);
+    expect(banners.any((b) => b.type == BannerType.noNetwork), true);
   });
 }
 

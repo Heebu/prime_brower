@@ -9,6 +9,7 @@ import 'firebase_sync_service.dart';
 import 'download_service.dart';
 import 'feed_ad_service.dart';
 import 'notification_service.dart';
+import 'connectivity_banner_service.dart';
 
 class BrowserManager with ChangeNotifier {
   final ShieldsService shieldsService;
@@ -170,21 +171,81 @@ class BrowserManager with ChangeNotifier {
       isIncognito: targetIncognito,
       onUrlChanged: (newUrl) {
         recordBrowsingHistory(tab.title, newUrl);
+        ConnectivityBannerService.instance.clearBanners(tab.id);
+        if (!tab.isNewTabPage) {
+          ConnectivityBannerService.instance.checkInsecureHttp(
+            tab.id,
+            newUrl,
+            onUpgradeHttps: () => tab.loadUrl(newUrl.replaceFirst('http://', 'https://')),
+          );
+          ConnectivityBannerService.instance.evaluateUrlSecurity(
+            tab.id,
+            newUrl,
+            onBackToSafety: () => tab.loadUrl('prime://newtab'),
+          );
+        }
         notifyListeners();
       },
       onTitleChanged: (newTitle) {
         recordBrowsingHistory(newTitle, tab.url);
         notifyListeners();
       },
-      onLoadingChanged: (_) => notifyListeners(),
-      onProgressChanged: (_) => notifyListeners(),
+      onLoadingChanged: (loading) {
+        if (loading && !tab.isNewTabPage) {
+          if (!ConnectivityBannerService.instance.isOnline) {
+            ConnectivityBannerService.instance.showNoNetworkBanner(
+              tab.id,
+              onRetry: () => tab.reload(),
+              onPlayGame: () {
+                tab.isOffline = true;
+                notifyListeners();
+              },
+            );
+          } else {
+            ConnectivityBannerService.instance.startSlowNetworkTimer(
+              tab.id,
+              onReloadLite: () => tab.reload(),
+            );
+          }
+        } else {
+          ConnectivityBannerService.instance.cancelSlowNetworkTimer(tab.id);
+        }
+        notifyListeners();
+      },
+      onProgressChanged: (p) {
+        if (p >= 60) {
+          ConnectivityBannerService.instance.cancelSlowNetworkTimer(tab.id);
+        }
+        notifyListeners();
+      },
       onFrozenChanged: (_) => notifyListeners(),
+      onErrorCallback: (error) {
+        ConnectivityBannerService.instance.cancelSlowNetworkTimer(tab.id);
+        if (tab.isOffline || !ConnectivityBannerService.instance.isOnline) {
+          ConnectivityBannerService.instance.showNoNetworkBanner(
+            tab.id,
+            onRetry: () => tab.reload(),
+            onPlayGame: () {
+              tab.isOffline = true;
+              notifyListeners();
+            },
+          );
+        } else {
+          ConnectivityBannerService.instance.showPageErrorBanner(
+            tab.id,
+            errorDescription: error.description,
+            onRetry: () => tab.reload(),
+          );
+        }
+        notifyListeners();
+      },
       onNavigationRequestFilter: (url) => shieldsService.shouldAllowNavigation(url),
       onDownloadRequested: (downloadUrl) {
         downloadService.startDownload(downloadUrl);
         onDownloadStarted?.call(downloadUrl);
       },
       onPageFinishedCallback: (controller) {
+        ConnectivityBannerService.instance.cancelSlowNetworkTimer(tab.id);
         notifyPageFinished(tab, controller);
       },
     );
@@ -219,7 +280,8 @@ class BrowserManager with ChangeNotifier {
 
     if (index < 0 || index >= targetList.length) return;
 
-    targetList.removeAt(index);
+    final removed = targetList.removeAt(index);
+    ConnectivityBannerService.instance.clearBanners(removed.id);
 
     if (targetIncognito) {
       if (_incognitoTabs.isEmpty) {

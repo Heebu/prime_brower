@@ -30,6 +30,11 @@ class WebTab {
   final void Function(bool isLoading)? onLoadingChanged;
   final void Function(int progress)? onProgressChanged;
   final void Function(bool isFrozen)? onFrozenChanged;
+  final void Function(WebResourceError error)? onErrorCallback;
+
+  bool hasError = false;
+  String? errorMessage;
+  bool isOffline = false;
 
   WebTab({
     required this.id,
@@ -44,11 +49,15 @@ class WebTab {
     this.groupTag,
     DateTime? lastActiveTime,
     this.estimatedMemorySavedMb = 42,
+    this.hasError = false,
+    this.errorMessage,
+    this.isOffline = false,
     this.onUrlChanged,
     this.onTitleChanged,
     this.onLoadingChanged,
     this.onProgressChanged,
     this.onFrozenChanged,
+    this.onErrorCallback,
     this.onPageFinishedCallback,
     this.onNavigationRequestFilter,
     this.onDownloadRequested,
@@ -118,6 +127,9 @@ class WebTab {
             onPageStarted: (String currentUrl) {
               url = currentUrl;
               isLoading = true;
+              hasError = false;
+              errorMessage = null;
+              isOffline = false;
               lastActiveTime = DateTime.now();
               onUrlChanged?.call(currentUrl);
               onLoadingChanged?.call(true);
@@ -141,7 +153,17 @@ class WebTab {
             },
             onWebResourceError: (WebResourceError error) {
               isLoading = false;
+              hasError = true;
+              errorMessage = error.description;
+              final desc = error.description.toLowerCase();
+              if (desc.contains('net::err_internet_disconnected') ||
+                  desc.contains('net::err_name_not_resolved') ||
+                  desc.contains('offline') ||
+                  desc.contains('connection')) {
+                isOffline = true;
+              }
               onLoadingChanged?.call(false);
+              onErrorCallback?.call(error);
             },
           ),
         );
@@ -181,6 +203,9 @@ class WebTab {
       thaw();
     }
     url = newUrl;
+    hasError = false;
+    errorMessage = null;
+    isOffline = false;
     lastActiveTime = DateTime.now();
     if (newUrl == 'prime://newtab') {
       title = 'New Tab';
@@ -200,6 +225,9 @@ class WebTab {
   }
 
   void reload() {
+    hasError = false;
+    errorMessage = null;
+    isOffline = false;
     if (isFrozen) {
       thaw();
     } else {
