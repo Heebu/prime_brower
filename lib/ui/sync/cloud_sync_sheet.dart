@@ -82,11 +82,26 @@ class _CloudSyncSheetState extends State<CloudSyncSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.cloud_sync, color: Color(0xFF10B981)),
-                      SizedBox(width: 8),
-                      Text(
+                      Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(
+                            color: const Color(0xFF10B981).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          'assets/app_logo.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
                         'Prime Cloud Sync',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),

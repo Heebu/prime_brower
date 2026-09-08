@@ -149,13 +149,28 @@ class _AuthDialogState extends State<AuthDialog> {
             children: [
               // Header Icon
               Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primeBlueGradient,
-                  shape: BoxShape.circle,
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF18181B) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF10B981).withOpacity(0.25),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withOpacity(0.18),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.cloud_sync, color: Colors.white, size: 28),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/app_logo.png',
+                  fit: BoxFit.cover,
+                ),
               ),
               const SizedBox(height: 14),
               const Text(

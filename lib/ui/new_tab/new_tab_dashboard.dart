@@ -171,37 +171,53 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
             children: [
               const SizedBox(height: 12),
 
-              // Brand Header with Gradient Icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  gradient: isIncognito
-                      ? const LinearGradient(
-                          colors: [Color(0xFF4A148C), Color(0xFF1E88E5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF06B6D4)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF10B981).withOpacity(0.35),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
+              // Brand Header with App Logo
+              if (isIncognito)
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E2E),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.security_rounded,
+                    size: 38,
+                    color: Colors.white,
+                  ),
+                )
+              else
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.25),
+                      width: 1.5,
                     ),
-                  ],
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withOpacity(0.18),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/app_logo.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Icon(
-                  isIncognito ? Icons.security_rounded : Icons.explore_rounded,
-                  size: 38,
-                  color: Colors.white,
-                ),
-              ),
               const SizedBox(height: 16),
 
               // Title

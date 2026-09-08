@@ -518,7 +518,28 @@ class _PrimeRunnerScreenState extends State<PrimeRunnerScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.videogame_asset_rounded, color: Color(0xFF10B981), size: 48),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withOpacity(0.4),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withOpacity(0.3),
+                    blurRadius: 16,
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                'assets/app_logo.png',
+                fit: BoxFit.cover,
+              ),
+            ),
             const SizedBox(height: 12),
             const Text(
               'PRIME CYBER RUNNER',
