@@ -17,6 +17,29 @@ service cloud.firestore {
       allow write: if true;
     }
 
+    // Search suggestions: Anyone can read trending and curated suggestions; allows seeding
+    match /search_suggestions/{suggestionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /suggestions/{suggestionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Top-level or guest search and browsing history
+    match /search_history/{historyId} {
+      allow read, write: if true;
+    }
+    match /browsing_history/{historyId} {
+      allow read, write: if true;
+    }
+
+    // Device-level history & tabs for guest / multi-device sessions
+    match /devices/{deviceId}/{allSubcollections=**} {
+      allow read, write: if true;
+    }
+
     // Users: Users can read and write their own profile and sync data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;

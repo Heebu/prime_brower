@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/web_tab.dart';
 import '../models/bookmark.dart';
+import '../models/search_suggestion.dart';
 import 'shields_service.dart';
 import 'firebase_auth_service.dart';
 import 'firebase_sync_service.dart';
@@ -27,6 +28,12 @@ class BrowserManager with ChangeNotifier {
 
   final List<Bookmark> _bookmarks = [];
   StreamSubscription<List<Bookmark>>? _bookmarksSubscription;
+  StreamSubscription<List<SearchSuggestion>>? _suggestionsSubscription;
+  StreamSubscription<List<String>>? _searchHistorySubscription;
+  StreamSubscription<List<Map<String, String>>>? _browsingHistorySubscription;
+
+  // Backend Search Suggestions
+  final List<SearchSuggestion> _backendSuggestions = [];
 
   // Search and Browsing History
   final List<String> _searchHistory = [
@@ -52,9 +59,34 @@ class BrowserManager with ChangeNotifier {
   }
 
   void _initCloudSync() {
+    // 1. Listen to backend search suggestions from Firestore
+    if (syncService != null) {
+      _suggestionsSubscription = syncService!.streamSearchSuggestions().listen((suggestions) {
+        if (suggestions.isNotEmpty) {
+          _backendSuggestions.clear();
+          _backendSuggestions.addAll(suggestions);
+          notifyListeners();
+        }
+      });
+      // Also trigger an immediate fetch if available
+      syncService!.fetchSearchSuggestions().then((suggestions) {
+        if (suggestions.isNotEmpty && _backendSuggestions.isEmpty) {
+          _backendSuggestions.clear();
+          _backendSuggestions.addAll(suggestions);
+          notifyListeners();
+        }
+      });
+    }
+
+    // 2. Setup initial history sync listeners
+    _setupHistoryListeners(authService?.currentUser?.uid);
+
+    // 3. Listen to authentication state changes for user-scoped sync
     authService?.addListener(() {
       final user = authService?.currentUser;
       _bookmarksSubscription?.cancel();
+      _setupHistoryListeners(user?.uid);
+
       if (user != null && syncService != null) {
         _bookmarksSubscription = syncService!.streamBookmarks(user.uid).listen((cloudBookmarks) {
           _bookmarks.clear();
@@ -62,6 +94,28 @@ class BrowserManager with ChangeNotifier {
           notifyListeners();
         });
         syncOpenTabsToCloud();
+      }
+    });
+  }
+
+  void _setupHistoryListeners(String? uid) {
+    if (syncService == null) return;
+
+    _searchHistorySubscription?.cancel();
+    _searchHistorySubscription = syncService!.streamSearchHistory(uid: uid).listen((cloudSearch) {
+      if (cloudSearch.isNotEmpty) {
+        _searchHistory.clear();
+        _searchHistory.addAll(cloudSearch);
+        notifyListeners();
+      }
+    });
+
+    _browsingHistorySubscription?.cancel();
+    _browsingHistorySubscription = syncService!.streamBrowsingHistory(uid: uid).listen((cloudBrowsing) {
+      if (cloudBrowsing.isNotEmpty) {
+        _browsingHistory.clear();
+        _browsingHistory.addAll(cloudBrowsing);
+        notifyListeners();
       }
     });
   }
@@ -128,6 +182,7 @@ class BrowserManager with ChangeNotifier {
   List<Bookmark> get bookmarks => List.unmodifiable(_bookmarks);
   List<String> get searchHistory => List.unmodifiable(_searchHistory);
   List<Map<String, String>> get browsingHistory => List.unmodifiable(_browsingHistory);
+  List<SearchSuggestion> get backendSuggestions => List.unmodifiable(_backendSuggestions);
 
   List<WebTab> get currentTabs => _isIncognito ? _incognitoTabs : _normalTabs;
   int get currentTabIndex => _isIncognito ? _incognitoTabIndex : _normalTabIndex;
@@ -420,24 +475,42 @@ class BrowserManager with ChangeNotifier {
       _searchHistory.removeLast();
     }
     notifyListeners();
+
+    // Sync to Firestore backend
+    syncService?.saveSearchHistory(
+      uid: authService?.currentUser?.uid,
+      query: trimmed,
+    );
   }
 
   void removeSearchHistory(String query) {
     _searchHistory.remove(query);
     notifyListeners();
+
+    // Sync deletion to Firestore backend
+    syncService?.deleteSearchHistory(
+      uid: authService?.currentUser?.uid,
+      query: query,
+    );
   }
 
   void clearSearchHistory() {
     _searchHistory.clear();
     notifyListeners();
+
+    // Sync clear to Firestore backend
+    syncService?.clearSearchHistory(
+      uid: authService?.currentUser?.uid,
+    );
   }
 
   void recordBrowsingHistory(String title, String url) {
     if (url.isEmpty || url == 'prime://newtab' || url == 'about:blank') return;
     if (_isIncognito) return;
+    final cleanTitle = title.isNotEmpty ? title : url;
     _browsingHistory.removeWhere((item) => item['url'] == url);
     _browsingHistory.insert(0, {
-      'title': title.isNotEmpty ? title : url,
+      'title': cleanTitle,
       'url': url,
       'timestamp': DateTime.now().toIso8601String(),
     });
@@ -445,6 +518,34 @@ class BrowserManager with ChangeNotifier {
       _browsingHistory.removeLast();
     }
     notifyListeners();
+
+    // Sync to Firestore backend
+    syncService?.saveBrowsingHistory(
+      uid: authService?.currentUser?.uid,
+      title: cleanTitle,
+      url: url,
+    );
+  }
+
+  void removeBrowsingHistory(String url) {
+    _browsingHistory.removeWhere((item) => item['url'] == url);
+    notifyListeners();
+
+    // Sync deletion to Firestore backend
+    syncService?.deleteBrowsingHistory(
+      uid: authService?.currentUser?.uid,
+      url: url,
+    );
+  }
+
+  void clearBrowsingHistory() {
+    _browsingHistory.clear();
+    notifyListeners();
+
+    // Sync clear to Firestore backend
+    syncService?.clearBrowsingHistory(
+      uid: authService?.currentUser?.uid,
+    );
   }
 
   void navigateCurrentTab(String input) {
@@ -504,4 +605,14 @@ class BrowserManager with ChangeNotifier {
   bool isBookmarked(String url) {
     return _bookmarks.any((item) => item.url == url);
   }
+
+  @override
+  void dispose() {
+    _bookmarksSubscription?.cancel();
+    _suggestionsSubscription?.cancel();
+    _searchHistorySubscription?.cancel();
+    _browsingHistorySubscription?.cancel();
+    super.dispose();
+  }
 }
+

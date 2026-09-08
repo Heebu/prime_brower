@@ -33,6 +33,7 @@ import 'package:prime_brower/ui/widgets/banner_simulator_sheet.dart';
 import 'package:prime_brower/ui/offline/prime_runner_screen.dart';
 import 'package:prime_brower/ui/auth/auth_dialog.dart';
 import 'package:prime_brower/models/feed_item.dart';
+import 'package:prime_brower/models/search_suggestion.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1396,6 +1397,120 @@ void main() {
     // Getters verification
     expect(service.firestoreNewsCount, 0);
     expect(service.firestoreNews.isEmpty, isTrue);
+  });
+
+  test('SearchSuggestion model serialization and properties test', () {
+    final map = {
+      'query': 'Flutter 3.44 official documentation',
+      'category': 'Development',
+      'targetUrl': 'https://docs.flutter.dev',
+      'popularity': 99,
+    };
+
+    final suggestion = SearchSuggestion.fromMap('sug_flutter_docs', map);
+    expect(suggestion.id, 'sug_flutter_docs');
+    expect(suggestion.query, 'Flutter 3.44 official documentation');
+    expect(suggestion.category, 'Development');
+    expect(suggestion.targetUrl, 'https://docs.flutter.dev');
+    expect(suggestion.popularity, 99);
+
+    final serialized = suggestion.toMap();
+    expect(serialized['query'], suggestion.query);
+    expect(serialized['category'], 'Development');
+    expect(serialized['targetUrl'], 'https://docs.flutter.dev');
+    expect(serialized['popularity'], 99);
+
+    // Equality test
+    final identicalSuggestion = SearchSuggestion.fromMap('sug_flutter_docs', map);
+    expect(suggestion, equals(identicalSuggestion));
+  });
+
+  test('FirebaseSyncService suggestions, search history, and browsing history methods test', () async {
+    final syncService = FirebaseSyncService();
+    expect(syncService.deviceId.isNotEmpty, isTrue);
+    expect(syncService.cachedSuggestions.isEmpty, isTrue);
+
+    // Verify stream fallbacks when Firebase is offline / uninitialized in test
+    final suggestionsStream = syncService.streamSearchSuggestions();
+    expect(suggestionsStream, isNotNull);
+
+    final searchStream = syncService.streamSearchHistory(uid: 'test_user_123');
+    expect(searchStream, isNotNull);
+
+    final browsingStream = syncService.streamBrowsingHistory(uid: 'test_user_123');
+    expect(browsingStream, isNotNull);
+
+    // Verify graceful execution of save/delete/clear without throwing
+    await syncService.saveSearchHistory(uid: 'test_user_123', query: 'Quantum computing');
+    await syncService.deleteSearchHistory(uid: 'test_user_123', query: 'Quantum computing');
+    await syncService.clearSearchHistory(uid: 'test_user_123');
+
+    await syncService.saveBrowsingHistory(uid: 'test_user_123', title: 'TechCrunch', url: 'https://techcrunch.com');
+    await syncService.deleteBrowsingHistory(uid: 'test_user_123', url: 'https://techcrunch.com');
+    await syncService.clearBrowsingHistory(uid: 'test_user_123');
+  });
+
+  testWidgets('OmniboxSuggestionsOverlay renders backend suggestions and handles selection', (WidgetTester tester) async {
+    final shieldsService = ShieldsService();
+    final browserManager = BrowserManager(shieldsService: shieldsService);
+
+    // Populate initial search history and browsing history
+    browserManager.addSearchHistory('Flutter animations');
+    browserManager.recordBrowsingHistory('GitHub', 'https://github.com');
+
+    String selectedResult = '';
+    String quickFilledResult = '';
+
+    // 1. Test empty query (Dashboard focus)
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OmniboxSuggestionsOverlay(
+            browserManager: browserManager,
+            query: '',
+            onSelect: (val) => selectedResult = val,
+            onQuickFill: (val) => quickFilledResult = val,
+            onDismiss: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify Recent Searches and Visited Pages headers
+    expect(find.text('RECENT SEARCHES'), findsOneWidget);
+    expect(find.text('Flutter animations'), findsOneWidget);
+    expect(find.text('Clear All'), findsAtLeastNWidgets(1));
+
+    // Tap quick-fill on recent search
+    final quickFillButtons = find.byIcon(Icons.north_west_rounded);
+    expect(quickFillButtons, findsAtLeastNWidgets(1));
+    await tester.tap(quickFillButtons.first);
+    expect(quickFilledResult, 'Flutter animations');
+
+    // Tap on the tile to select
+    await tester.tap(find.text('Flutter animations'));
+    expect(selectedResult, 'Flutter animations');
+
+    // 2. Test typed query matching web search direct action
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OmniboxSuggestionsOverlay(
+            browserManager: browserManager,
+            query: 'dart',
+            onSelect: (val) => selectedResult = val,
+            onQuickFill: (val) => quickFilledResult = val,
+            onDismiss: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Search web for "dart"'), findsOneWidget);
+    await tester.tap(find.text('Search web for "dart"'));
+    expect(selectedResult, 'dart');
   });
 }
 
