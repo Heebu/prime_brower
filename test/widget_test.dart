@@ -34,6 +34,7 @@ import 'package:prime_brower/ui/offline/prime_runner_screen.dart';
 import 'package:prime_brower/ui/auth/auth_dialog.dart';
 import 'package:prime_brower/models/feed_item.dart';
 import 'package:prime_brower/models/search_suggestion.dart';
+import 'package:prime_brower/services/app_link_service.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1511,6 +1512,43 @@ void main() {
     expect(find.text('Search web for "dart"'), findsOneWidget);
     await tester.tap(find.text('Search web for "dart"'));
     expect(selectedResult, 'dart');
+  });
+
+  test('AppLinkService singleton and initial URL handling test', () async {
+    final appLinkService = AppLinkService.instance;
+    expect(appLinkService, isNotNull);
+
+    // Initial URL returns null when no incoming intent
+    final initialUrl = await appLinkService.getInitialUrl();
+    expect(initialUrl, isNull);
+
+    // Stream is active
+    expect(appLinkService.onLinkOpened, isNotNull);
+  });
+
+  testWidgets('BrowserMenuSheet displays Set as Default Browser option', (WidgetTester tester) async {
+    final shieldsService = ShieldsService();
+    final browserManager = BrowserManager(shieldsService: shieldsService);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: BrowserMenuSheet(
+            browserManager: browserManager,
+            shieldsService: shieldsService,
+            onOpenCopilot: () {},
+            onFindInPage: () {},
+            onOpenSync: () {},
+            onOpenDownloads: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Set as Default Browser'), findsOneWidget);
+    expect(find.text('Open all web links in Prime Browser'), findsOneWidget);
+    expect(find.byIcon(Icons.open_in_browser_rounded), findsOneWidget);
   });
 }
 

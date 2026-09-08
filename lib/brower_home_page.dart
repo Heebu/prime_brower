@@ -9,6 +9,7 @@ import 'services/firebase_auth_service.dart';
 import 'services/firebase_sync_service.dart';
 import 'services/theme_service.dart';
 import 'services/notification_service.dart';
+import 'services/app_link_service.dart';
 import 'web_view_page.dart';
 import 'ui/widgets/omnibox_app_bar.dart';
 import 'ui/widgets/omnibox_suggestions_overlay.dart';
@@ -35,6 +36,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
   late final AiCopilotService _copilotService;
   bool _isFindInPageActive = false;
   StreamSubscription<NotificationActionPayload>? _notificationSubscription;
+  StreamSubscription<String>? _appLinkSubscription;
 
   late final TextEditingController _omniboxController;
   late final FocusNode _omniboxFocusNode;
@@ -83,6 +85,17 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
         _openDownloads();
       }
     });
+
+    // Handle external links and default browser intent URLs
+    AppLinkService.instance.getInitialUrl().then((url) {
+      if (mounted && url != null && url.isNotEmpty) {
+        _browserManager.openNewTab(url);
+      }
+    });
+    _appLinkSubscription = AppLinkService.instance.onLinkOpened.listen((url) {
+      if (!mounted || url.isEmpty) return;
+      _browserManager.openNewTab(url);
+    });
   }
 
   @override
@@ -97,6 +110,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _notificationSubscription?.cancel();
+    _appLinkSubscription?.cancel();
     _omniboxController.dispose();
     _omniboxFocusNode.dispose();
     super.dispose();

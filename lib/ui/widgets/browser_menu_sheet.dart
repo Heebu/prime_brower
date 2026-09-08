@@ -10,6 +10,7 @@ import '../productivity/reader_mode_screen.dart';
 import '../productivity/bookmarks_screen.dart';
 import 'notification_settings_sheet.dart';
 import 'banner_simulator_sheet.dart';
+import '../../services/app_link_service.dart';
 
 class BrowserMenuSheet extends StatelessWidget {
   final BrowserManager browserManager;
@@ -54,28 +55,28 @@ class BrowserMenuSheet extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      tooltip: 'Back',
-                      onPressed: currentTab == null || currentTab.isNewTabPage
-                          ? null
-                          : () async {
-                              final nav = Navigator.of(context);
-                              if (await currentTab.canGoBack()) await currentTab.goBack();
-                              if (context.mounted) nav.pop();
-                            },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward),
-                      tooltip: 'Forward',
-                      onPressed: currentTab == null || currentTab.isNewTabPage
-                          ? null
-                          : () async {
-                              final nav = Navigator.of(context);
-                              if (await currentTab.canGoForward()) await currentTab.goForward();
-                              if (context.mounted) nav.pop();
-                            },
-                    ),
+                    // IconButton(
+                    //   icon: const Icon(Icons.arrow_back),
+                    //   tooltip: 'Back',
+                    //   onPressed: currentTab == null || currentTab.isNewTabPage
+                    //       ? null
+                    //       : () async {
+                    //           final nav = Navigator.of(context);
+                    //           if (await currentTab.canGoBack()) await currentTab.goBack();
+                    //           if (context.mounted) nav.pop();
+                    //         },
+                    // ),
+                    // IconButton(
+                    //   icon: const Icon(Icons.arrow_forward),
+                    //   tooltip: 'Forward',
+                    //   onPressed: currentTab == null || currentTab.isNewTabPage
+                    //       ? null
+                    //       : () async {
+                    //           final nav = Navigator.of(context);
+                    //           if (await currentTab.canGoForward()) await currentTab.goForward();
+                    //           if (context.mounted) nav.pop();
+                    //         },
+                    // ),
                     IconButton(
                       icon: Icon(
                         isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
@@ -104,6 +105,17 @@ class BrowserMenuSheet extends StatelessWidget {
                               currentTab.reload();
                               Navigator.pop(context);
                             },
+                    ),
+
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: isBookmarked ? const Color(0xFF10B981) : null,
+                      ),
+                      tooltip: 'Close',
+                      onPressed: (){
+                        Navigator.pop(context);
+                      },
                     ),
                   ],
                 ),
@@ -485,6 +497,26 @@ class BrowserMenuSheet extends StatelessWidget {
                   );
                 },
               ),
+
+              // Set as Default Browser
+              ListTile(
+                leading: const Icon(Icons.open_in_browser_rounded, color: Color(0xFF10B981)),
+                title: const Text('Set as Default Browser'),
+                subtitle: const Text('Open all web links in Prime Browser'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final opened = await AppLinkService.instance.openDefaultBrowserSettings();
+                  if (!opened && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please select Prime Browser in Android Settings > Default Apps'),
+                      ),
+                    );
+                  }
+                },
+              ),
+              const Divider(height: 1),
 
               // Incognito Tab Action
               ListTile(
