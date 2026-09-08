@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -34,10 +35,15 @@ class FeedAdService with ChangeNotifier {
 
   List<NewsFeedItem> _firestoreNews = [];
   List<SponsoredAdItem> _firestoreAds = [];
+  StreamSubscription<QuerySnapshot>? _newsSubscription;
+  StreamSubscription<QuerySnapshot>? _adsSubscription;
 
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   String get userDeviceId => _userDeviceId;
+  bool get isUsingFirestoreNews => _firestoreNews.isNotEmpty;
+  int get firestoreNewsCount => _firestoreNews.length;
+  List<NewsFeedItem> get firestoreNews => List.unmodifiable(_firestoreNews);
 
   FeedAdService({
     AdMobService? admobService,
@@ -52,10 +58,51 @@ class FeedAdService with ChangeNotifier {
       if (Firebase.apps.isNotEmpty) {
         _firestore = FirebaseFirestore.instance;
         _isInitialized = true;
+        _listenToRemoteStreams();
         fetchRemoteFeedsAndAds();
       }
     } catch (e) {
       debugPrint('FeedAdService: Firestore not initialized: $e');
+    }
+  }
+
+  void _listenToRemoteStreams() {
+    if (_firestore == null) return;
+    try {
+      _newsSubscription?.cancel();
+      _newsSubscription = _firestore!
+          .collection('news_feeds')
+          .limit(40)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          _firestoreNews = snapshot.docs
+              .map((doc) => NewsFeedItem.fromFirestore(doc))
+              .toList();
+          _firestoreNews.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+          notifyListeners();
+        }
+      }, onError: (e) {
+        debugPrint('FeedAdService: News stream error: $e');
+      });
+
+      _adsSubscription?.cancel();
+      _adsSubscription = _firestore!
+          .collection('adverts')
+          .limit(15)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.docs.isNotEmpty) {
+          _firestoreAds = snapshot.docs
+              .map((doc) => SponsoredAdItem.fromFirestore(doc))
+              .toList();
+          notifyListeners();
+        }
+      }, onError: (e) {
+        debugPrint('FeedAdService: Ads stream error: $e');
+      });
+    } catch (e) {
+      debugPrint('FeedAdService: Stream setup notice: $e');
     }
   }
 
@@ -66,22 +113,32 @@ class FeedAdService with ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      final newsSnapshot = await _firestore!
+      var newsSnapshot = await _firestore!
           .collection('news_feeds')
-          .limit(30)
+          .limit(40)
           .get()
-          .timeout(const Duration(seconds: 4));
+          .timeout(const Duration(seconds: 8));
+
+      // Fallback query to 'news' collection if 'news_feeds' is empty
+      if (newsSnapshot.docs.isEmpty) {
+        newsSnapshot = await _firestore!
+            .collection('news')
+            .limit(40)
+            .get()
+            .timeout(const Duration(seconds: 8));
+      }
 
       final adsSnapshot = await _firestore!
           .collection('adverts')
           .limit(15)
           .get()
-          .timeout(const Duration(seconds: 4));
+          .timeout(const Duration(seconds: 8));
 
       if (newsSnapshot.docs.isNotEmpty) {
         _firestoreNews = newsSnapshot.docs
             .map((doc) => NewsFeedItem.fromFirestore(doc))
             .toList();
+        _firestoreNews.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
       }
 
       if (adsSnapshot.docs.isNotEmpty) {
@@ -112,11 +169,10 @@ class FeedAdService with ChangeNotifier {
     final seed = _userDeviceId.hashCode ^ tabId.hashCode ^ (refreshCount * 397);
     final random = Random(seed);
 
-    // Combine remote items with built-in fallbacks
-    final allNews = [
-      ..._firestoreNews,
-      ..._defaultNewsItems,
-    ];
+    // Prioritize Firebase saved news; fallback to defaults if offline or empty
+    final allNews = _firestoreNews.isNotEmpty
+        ? List<NewsFeedItem>.from(_firestoreNews)
+        : List<NewsFeedItem>.from(_defaultNewsItems);
 
     // Deduplicate by ID
     final seenNewsIds = <String>{};
@@ -136,12 +192,17 @@ class FeedAdService with ChangeNotifier {
     filteredNews.shuffle(random);
 
     // Combine ads (Firestore custom ads, default sponsored ads, and AdMob banner units)
-    final allAds = [
-      ..._firestoreAds,
-      ..._defaultSponsoredAds,
-      _createAdMobUnit(tabId, 1),
-      _createAdMobUnit(tabId, 2),
-    ];
+    final allAds = _firestoreAds.isNotEmpty
+        ? [
+            ..._firestoreAds,
+            _createAdMobUnit(tabId, 1),
+            _createAdMobUnit(tabId, 2),
+          ]
+        : [
+            ..._defaultSponsoredAds,
+            _createAdMobUnit(tabId, 1),
+            _createAdMobUnit(tabId, 2),
+          ];
 
     final seenAdIds = <String>{};
     final uniqueAds = <SponsoredAdItem>[];
@@ -369,5 +430,37 @@ class FeedAdService with ChangeNotifier {
     } catch (e) {
       debugPrint('FeedAdService: Error seeding demo data: $e');
     }
+  }
+
+  /// Seeds news and adverts into Firestore collections ('news_feeds', 'news', 'adverts')
+  Future<int> seedRemoteNewsDatabase() async {
+    if (_firestore == null) return 0;
+    int count = 0;
+    try {
+      final batch = _firestore!.batch();
+      for (final item in _defaultNewsItems) {
+        final docRef1 = _firestore!.collection('news_feeds').doc(item.id);
+        final docRef2 = _firestore!.collection('news').doc(item.id);
+        batch.set(docRef1, item.toMap());
+        batch.set(docRef2, item.toMap());
+        count++;
+      }
+      for (final ad in _defaultSponsoredAds) {
+        final docRef = _firestore!.collection('adverts').doc(ad.id);
+        batch.set(docRef, ad.toMap());
+      }
+      await batch.commit();
+      await fetchRemoteFeedsAndAds();
+    } catch (e) {
+      debugPrint('FeedAdService: Error in seedRemoteNewsDatabase: $e');
+    }
+    return count;
+  }
+
+  @override
+  void dispose() {
+    _newsSubscription?.cancel();
+    _adsSubscription?.cancel();
+    super.dispose();
   }
 }

@@ -42,7 +42,18 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
 
   late List<SpeedDialItem> _speedDialItems;
   String _selectedCategory = 'All';
-  static const List<String> _categories = ['All', 'Tech', 'Business', 'World', 'Science', 'Sports'];
+  static const List<String> _categories = [
+    'All',
+    'Tech',
+    'AI',
+    'Privacy',
+    'Business',
+    'World',
+    'Science',
+    'Sports',
+    'Crypto',
+    'Gaming',
+  ];
 
   @override
   void initState() {
@@ -669,169 +680,219 @@ class _NewTabDashboardState extends State<NewTabDashboard> {
                 ),
               ],
 
-              // Trending Feeds & News Updates Section
+              // Trending Feeds & News Updates Section (Live from Firebase Firestore)
               const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.newspaper_rounded,
-                          size: 16,
-                          color: Color(0xFF10B981),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'FEEDS & NEWS UPDATES',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                          color: isDark ? Colors.white70 : Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
+              AnimatedBuilder(
+                animation: widget.browserManager.feedAdService,
+                builder: (context, _) {
+                  final feedService = widget.browserManager.feedAdService;
+                  final isCloudNews = feedService.isUsingFirestoreNews;
 
-                  // Shuffle / Refresh Feed Button
-                  InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      widget.browserManager.feedAdService.refreshTabFeed(widget.tabId);
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Feed re-shuffled with fresh stories & updates!'),
-                          duration: Duration(milliseconds: 1500),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF4F4F5),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.shuffle_rounded,
-                            size: 14,
-                            color: isDark ? Colors.white70 : const Color(0xFF10B981),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.newspaper_rounded,
+                                  size: 16,
+                                  color: Color(0xFF10B981),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'FEEDS & NEWS UPDATES',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.8,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                ),
+                              ),
+                              if (isCloudNews) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.cloud_done_rounded, size: 10, color: Color(0xFF10B981)),
+                                      SizedBox(width: 3),
+                                      Text(
+                                        'CLOUD',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF10B981),
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Shuffle',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark ? Colors.white70 : const Color(0xFF10B981),
+
+                          // Shuffle / Refresh Feed Button
+                          InkWell(
+                            onTap: () async {
+                              HapticFeedback.lightImpact();
+                              feedService.refreshTabFeed(widget.tabId);
+                              await feedService.fetchRemoteFeedsAndAds();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      isCloudNews
+                                          ? 'Feed refreshed from Firebase Cloud (${feedService.firestoreNewsCount} stories)'
+                                          : 'Feed re-shuffled with fresh stories & updates!',
+                                    ),
+                                    duration: const Duration(milliseconds: 1500),
+                                  ),
+                                );
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF4F4F5),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.shuffle_rounded,
+                                    size: 14,
+                                    color: isDark ? Colors.white70 : const Color(0xFF10B981),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Shuffle',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.white70 : const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+                      const SizedBox(height: 12),
 
-              // Category Filter Pills
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _categories.map((cat) {
-                    final isSelected = _selectedCategory == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: InkWell(
-                        onTap: () => setState(() => _selectedCategory = cat),
-                        borderRadius: BorderRadius.circular(20),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF10B981)
-                                : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF10B981)
-                                  : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
-                            ),
-                          ),
-                          child: Text(
-                            cat,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              color: isSelected
-                                  ? Colors.white
-                                  : (isDark ? Colors.white70 : Colors.grey[800]),
-                            ),
-                          ),
+                      // Category Filter Pills
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: _categories.map((cat) {
+                            final isSelected = _selectedCategory == cat;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedCategory = cat),
+                                borderRadius: BorderRadius.circular(20),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF10B981)
+                                        : (isDark ? const Color(0xFF1C1C1F) : Colors.white),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF10B981)
+                                          : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.2)),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : (isDark ? Colors.white70 : Colors.grey[800]),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-              // Feeds & Adverts List
-              Builder(
-                builder: (context) {
-                  final feedEntries = widget.browserManager.feedAdService.getFeedForTab(
-                    tabId: widget.tabId,
-                    selectedCategory: _selectedCategory,
-                  );
+                      // Feeds & Adverts List
+                      Builder(
+                        builder: (context) {
+                          final feedEntries = feedService.getFeedForTab(
+                            tabId: widget.tabId,
+                            selectedCategory: _selectedCategory,
+                          );
 
-                  if (feedEntries.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32),
-                      child: Center(
-                        child: Text(
-                          'No feeds available in this category',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? Colors.white54 : Colors.grey[600],
-                          ),
-                        ),
+                          if (feedEntries.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 32),
+                              child: Center(
+                                child: Text(
+                                  'No feeds available in this category',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.white54 : Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: feedEntries.length,
+                            itemBuilder: (context, idx) {
+                              final entry = feedEntries[idx];
+                              if (entry.isNews) {
+                                return NewsFeedCard(
+                                  item: entry.news!,
+                                  isDark: isDark,
+                                  onTap: widget.onNavigate,
+                                );
+                              } else {
+                                return AdCardWidget(
+                                  ad: entry.ad!,
+                                  isDark: isDark,
+                                  onTap: widget.onNavigate,
+                                );
+                              }
+                            },
+                          );
+                        },
                       ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: feedEntries.length,
-                    itemBuilder: (context, idx) {
-                      final entry = feedEntries[idx];
-                      if (entry.isNews) {
-                        return NewsFeedCard(
-                          item: entry.news!,
-                          isDark: isDark,
-                          onTap: widget.onNavigate,
-                        );
-                      } else {
-                        return AdCardWidget(
-                          ad: entry.ad!,
-                          isDark: isDark,
-                          onTap: widget.onNavigate,
-                        );
-                      }
-                    },
+                    ],
                   );
                 },
               ),

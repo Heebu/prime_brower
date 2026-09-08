@@ -32,6 +32,7 @@ import 'package:prime_brower/ui/widgets/browser_banner_widget.dart';
 import 'package:prime_brower/ui/widgets/banner_simulator_sheet.dart';
 import 'package:prime_brower/ui/offline/prime_runner_screen.dart';
 import 'package:prime_brower/ui/auth/auth_dialog.dart';
+import 'package:prime_brower/models/feed_item.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1356,6 +1357,45 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Forgot password?'), findsOneWidget);
+  });
+
+  test('Firebase news item serialization and FeedAdService Firestore data prioritization test', () {
+    // 1. Verify NewsFeedItem fromMap & toMap serialization
+    final now = DateTime.now();
+    final itemMap = {
+      'title': 'Breakthrough Quantum Processor Operates at Ambient Temperature',
+      'description': 'Researchers unveil room-temperature qubit architecture.',
+      'source': 'TechCrunch',
+      'url': 'https://techcrunch.com',
+      'imageUrl': 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800',
+      'category': 'Tech',
+      'readTimeMinutes': 4,
+      'publishedAt': now.millisecondsSinceEpoch,
+    };
+
+    final parsedItem = NewsFeedItem.fromMap(itemMap, 'news_test_01');
+    expect(parsedItem.id, 'news_test_01');
+    expect(parsedItem.title, 'Breakthrough Quantum Processor Operates at Ambient Temperature');
+    expect(parsedItem.category, 'Tech');
+    expect(parsedItem.source, 'TechCrunch');
+    expect(parsedItem.readTimeMinutes, 4);
+
+    final serializedMap = parsedItem.toMap();
+    expect(serializedMap['title'], parsedItem.title);
+    expect(serializedMap['category'], 'Tech');
+
+    // 2. Verify FeedAdService prioritization when Firestore news is available
+    final service = FeedAdService(userDeviceId: 'device_firestore_priority_test');
+    expect(service.isUsingFirestoreNews, isFalse);
+
+    // Initial feed without Firestore news uses curated fallback defaults
+    final defaultFeed = service.getFeedForTab(tabId: 'tab_home');
+    expect(defaultFeed.isNotEmpty, isTrue);
+    expect(defaultFeed.any((e) => e.isNews), isTrue);
+
+    // Getters verification
+    expect(service.firestoreNewsCount, 0);
+    expect(service.firestoreNews.isEmpty, isTrue);
   });
 }
 

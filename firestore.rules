@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // News feeds: Anyone can read news; allows seeding
+    match /news_feeds/{newsId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Adverts: Anyone can read sponsored adverts
+    match /adverts/{adId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Users: Users can read and write their own profile and sync data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      match /{allSubcollections=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}
