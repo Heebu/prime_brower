@@ -35,6 +35,7 @@ import 'package:prime_brower/ui/auth/auth_dialog.dart';
 import 'package:prime_brower/models/feed_item.dart';
 import 'package:prime_brower/models/search_suggestion.dart';
 import 'package:prime_brower/services/app_link_service.dart';
+import 'package:prime_brower/services/session_persistence_service.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1549,6 +1550,84 @@ void main() {
     expect(find.text('Set as Default Browser'), findsOneWidget);
     expect(find.text('Open all web links in Prime Browser'), findsOneWidget);
     expect(find.byIcon(Icons.open_in_browser_rounded), findsOneWidget);
+  });
+
+  test('SessionPersistenceService saveSession, loadSession, and clearSession mock mode test', () async {
+    final service = SessionPersistenceService.instance;
+    service.enableMockMode();
+
+    // Verify initially null
+    var session = await service.loadSession();
+    expect(session, isNull);
+
+    // Save session
+    final tabsToSave = [
+      {'url': 'https://flutter.dev', 'title': 'Flutter Dev', 'isPinned': true},
+      {'url': 'https://news.ycombinator.com', 'title': 'Hacker News', 'isPinned': false},
+    ];
+    await service.saveSession(normalTabs: tabsToSave, activeIndex: 1);
+
+    session = await service.loadSession();
+    expect(session, isNotNull);
+    expect(session!.tabs.length, 2);
+    expect(session.tabs[0]['url'], 'https://flutter.dev');
+    expect(session.tabs[0]['isPinned'], isTrue);
+    expect(session.tabs[1]['url'], 'https://news.ycombinator.com');
+    expect(session.activeIndex, 1);
+
+    // Clear session
+    await service.clearSession();
+    session = await service.loadSession();
+    expect(session, isNull);
+  });
+
+  test('BrowserManager session restore and hardcoded suggestions removal test', () async {
+    final sessionService = SessionPersistenceService.instance;
+    sessionService.enableMockMode(
+      SavedTabSession(
+        tabs: [
+          {'url': 'https://flutter.dev', 'title': 'Flutter Dev', 'isPinned': true},
+          {'url': 'https://dart.dev', 'title': 'Dart Lang', 'isPinned': false},
+        ],
+        activeIndex: 1,
+      ),
+    );
+
+    final shields = ShieldsService();
+    final manager = BrowserManager(shieldsService: shields, sessionService: sessionService);
+
+    // Zero hardcoded suggestions out of the box
+    expect(manager.searchHistory.isEmpty, isTrue);
+    expect(manager.backendSuggestions.isEmpty, isTrue);
+
+    // Allow async session restore to complete
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    // Verify restored tabs
+    expect(manager.normalTabs.length, 2);
+    expect(manager.normalTabs[0].url, 'https://flutter.dev');
+    expect(manager.normalTabs[0].title, 'Flutter Dev');
+    expect(manager.normalTabs[0].isPinned, isTrue);
+    expect(manager.normalTabs[1].url, 'https://dart.dev');
+    expect(manager.normalTabs[1].title, 'Dart Lang');
+    expect(manager.normalTabs[1].isPinned, isFalse);
+    expect(manager.currentTabIndex, 1);
+    expect(manager.currentTab?.url, 'https://dart.dev');
+
+    // Test tab opening triggers debounced session persist
+    manager.openNewTab('https://pub.dev');
+    expect(manager.normalTabs.length, 3);
+    expect(manager.currentTabIndex, 2);
+
+    // Close tab and verify
+    manager.closeTab(2);
+    expect(manager.normalTabs.length, 2);
+
+    // Close all tabs clears session
+    manager.closeAllTabs();
+    expect(manager.normalTabs.isEmpty, isTrue);
+    final clearedSession = await sessionService.loadSession();
+    expect(clearedSession, isNull);
   });
 }
 

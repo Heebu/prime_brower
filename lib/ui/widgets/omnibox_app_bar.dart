@@ -304,12 +304,12 @@ class _OmniboxAppBarState extends State<OmniboxAppBar> {
                       onSubmitted: (_) => _submitUrl(),
                       style: TextStyle(
                         fontSize: 14,
-                        color: isIncognito ? Colors.white : Colors.black87,
+                        color: isIncognito ? Colors.white : Colors.green,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search or type URL',
                         hintStyle: TextStyle(
-                          color: isIncognito ? Colors.white38 : Colors.grey[500],
+                          color: isIncognito ? Colors.white38 : Colors.green[500],
                           fontSize: 13,
                         ),
                         border: InputBorder.none,

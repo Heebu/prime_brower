@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/web_tab.dart';
 import '../models/bookmark.dart';
@@ -11,6 +12,7 @@ import 'download_service.dart';
 import 'feed_ad_service.dart';
 import 'notification_service.dart';
 import 'connectivity_banner_service.dart';
+import 'session_persistence_service.dart';
 
 class BrowserManager with ChangeNotifier {
   final ShieldsService shieldsService;
@@ -18,6 +20,7 @@ class BrowserManager with ChangeNotifier {
   final FeedAdService feedAdService;
   final FirebaseAuthService? authService;
   final FirebaseSyncService? syncService;
+  final SessionPersistenceService sessionService;
   final void Function(String url)? onDownloadStarted;
 
   final List<WebTab> _normalTabs = [];
@@ -31,18 +34,24 @@ class BrowserManager with ChangeNotifier {
   StreamSubscription<List<SearchSuggestion>>? _suggestionsSubscription;
   StreamSubscription<List<String>>? _searchHistorySubscription;
   StreamSubscription<List<Map<String, String>>>? _browsingHistorySubscription;
+  Timer? _sessionSaveTimer;
+  bool _isRestoring = false;
+  bool _isInitialized = false;
 
-  // Backend Search Suggestions
+  // Backend Search Suggestions (loaded dynamically from Firestore)
   final List<SearchSuggestion> _backendSuggestions = [];
 
-  // Search and Browsing History
-  final List<String> _searchHistory = [
-    'Flutter 3.44 release notes',
-    'Prime browser features',
-    'Dart devtools inspect element',
-    'TechCrunch mobile news',
-  ];
+  // Search and Browsing History (loaded from backend & user activity, zero hardcoded entries)
+  final List<String> _searchHistory = [];
   final List<Map<String, String>> _browsingHistory = [];
+
+  bool get _isTestEnv {
+    try {
+      return Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
 
   BrowserManager({
     required this.shieldsService,
@@ -50,12 +59,76 @@ class BrowserManager with ChangeNotifier {
     FeedAdService? feedAdService,
     this.authService,
     this.syncService,
+    SessionPersistenceService? sessionService,
     this.onDownloadStarted,
   })  : downloadService = downloadService ?? DownloadService(),
-        feedAdService = feedAdService ?? FeedAdService() {
-    // Open default initial normal tab on start dashboard
+        feedAdService = feedAdService ?? FeedAdService(),
+        sessionService = sessionService ?? SessionPersistenceService.instance {
+    _isRestoring = true;
+    // Open default initial normal tab placeholder
     openNewTab('prime://newtab', incognito: false);
     _initCloudSync();
+    _restoreSavedSession();
+  }
+
+  void _saveSessionDebounced() {
+    if (_isRestoring || !_isInitialized) return;
+    if (_isTestEnv || sessionService.isMockMode) {
+      _persistNormalTabs();
+      return;
+    }
+    _sessionSaveTimer?.cancel();
+    _sessionSaveTimer = Timer(const Duration(milliseconds: 600), () {
+      _persistNormalTabs();
+    });
+  }
+
+  void _persistNormalTabs() {
+    if (_normalTabs.isEmpty) return;
+    final tabData = _normalTabs.map((t) => {
+      'url': t.url,
+      'title': t.title,
+      'isPinned': t.isPinned,
+    }).toList();
+
+    sessionService.saveSession(
+      normalTabs: tabData,
+      activeIndex: _normalTabIndex,
+    );
+  }
+
+  Future<void> _restoreSavedSession() async {
+    try {
+      final session = await sessionService.loadSession();
+      if (session != null && session.tabs.isNotEmpty) {
+        // Only restore if user hasn't already navigated the initial tab
+        final canReplaceInitialTab = _normalTabs.length == 1 && _normalTabs.first.url == 'prime://newtab';
+        if (canReplaceInitialTab) {
+          _normalTabs.clear();
+          for (final tabData in session.tabs) {
+            final url = tabData['url'] as String? ?? 'prime://newtab';
+            final title = tabData['title'] as String? ?? 'New Tab';
+            final isPinned = tabData['isPinned'] as bool? ?? false;
+            openNewTab(url, incognito: false);
+            if (_normalTabs.isNotEmpty) {
+              _normalTabs.last.title = title;
+              _normalTabs.last.isPinned = isPinned;
+            }
+          }
+          if (_normalTabs.isNotEmpty) {
+            _normalTabIndex = session.activeIndex.clamp(0, _normalTabs.length - 1);
+          } else {
+            openNewTab('prime://newtab', incognito: false);
+          }
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('BrowserManager: Error restoring saved tab session: $e');
+    } finally {
+      _isRestoring = false;
+      _isInitialized = true;
+    }
   }
 
   void _initCloudSync() {
@@ -158,6 +231,10 @@ class BrowserManager with ChangeNotifier {
 
   void setAppInBackground(bool inBackground) {
     _isAppInBackground = inBackground;
+    if (inBackground) {
+      _sessionSaveTimer?.cancel();
+      _persistNormalTabs();
+    }
   }
 
   void notifyPageFinished(WebTab tab, [dynamic controller]) {
@@ -239,10 +316,16 @@ class BrowserManager with ChangeNotifier {
             onBackToSafety: () => tab.loadUrl('prime://newtab'),
           );
         }
+        if (!targetIncognito) {
+          _saveSessionDebounced();
+        }
         notifyListeners();
       },
       onTitleChanged: (newTitle) {
         recordBrowsingHistory(newTitle, tab.url);
+        if (!targetIncognito) {
+          _saveSessionDebounced();
+        }
         notifyListeners();
       },
       onLoadingChanged: (loading) {
@@ -334,6 +417,7 @@ class BrowserManager with ChangeNotifier {
       _normalTabs.add(tab);
       _normalTabIndex = _normalTabs.length - 1;
       _isIncognito = false;
+      _saveSessionDebounced();
     }
 
     notifyListeners();
@@ -360,6 +444,7 @@ class BrowserManager with ChangeNotifier {
       } else if (_normalTabIndex >= _normalTabs.length) {
         _normalTabIndex = _normalTabs.length - 1;
       }
+      _saveSessionDebounced();
     }
 
     notifyListeners();
@@ -382,6 +467,7 @@ class BrowserManager with ChangeNotifier {
     } else {
       _normalTabs.clear();
       _normalTabIndex = 0;
+      sessionService.clearSession();
     }
     notifyListeners();
   }
@@ -397,6 +483,7 @@ class BrowserManager with ChangeNotifier {
         _incognitoTabIndex = index;
       } else {
         _normalTabIndex = index;
+        _saveSessionDebounced();
       }
 
       // Wake up the selected tab if it was hibernating
@@ -444,6 +531,7 @@ class BrowserManager with ChangeNotifier {
       } else if (_normalTabIndex < oldIndex && _normalTabIndex >= newIndex) {
         _normalTabIndex += 1;
       }
+      _saveSessionDebounced();
     }
     notifyListeners();
   }
@@ -453,6 +541,9 @@ class BrowserManager with ChangeNotifier {
     final targetList = targetIncognito ? _incognitoTabs : _normalTabs;
     if (index >= 0 && index < targetList.length) {
       targetList[index].isPinned = !targetList[index].isPinned;
+      if (!targetIncognito) {
+        _saveSessionDebounced();
+      }
       notifyListeners();
     }
   }
@@ -608,6 +699,8 @@ class BrowserManager with ChangeNotifier {
 
   @override
   void dispose() {
+    _sessionSaveTimer?.cancel();
+    _persistNormalTabs();
     _bookmarksSubscription?.cancel();
     _suggestionsSubscription?.cancel();
     _searchHistorySubscription?.cancel();
