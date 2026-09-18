@@ -1,30 +1,115 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 typedef PiAiService = AiCopilotService;
 
 class AiCopilotService with ChangeNotifier {
+  static const String _configFileName = 'ai_config.json';
+  File? _configFile;
+  bool _mockMode = false;
+  String? _mockKey;
   String? _geminiApiKey;
 
   String? get apiKey => _geminiApiKey;
   String? get geminiApiKey => _geminiApiKey;
   bool get hasApiKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+  bool get isMockMode => _mockMode;
 
-  void setApiKey(String? key) {
-    _geminiApiKey = key?.trim();
+  bool get _isTestEnv {
+    try {
+      return Platform.environment.containsKey('FLUTTER_TEST');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  AiCopilotService([String? initialApiKey]) : _geminiApiKey = initialApiKey {
+    if (_isTestEnv) {
+      _mockMode = true;
+    }
+    _loadSavedApiKey();
+  }
+
+  @visibleForTesting
+  void enableMockMode([String? initialKey]) {
+    _mockMode = true;
+    _mockKey = initialKey;
+    _geminiApiKey = initialKey;
+  }
+
+  Future<File?> _getConfigFile() async {
+    if (_mockMode) return null;
+    if (_configFile != null) return _configFile!;
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      _configFile = File('${dir.path}/$_configFileName');
+      return _configFile!;
+    } catch (e) {
+      debugPrint('AiCopilotService: Error resolving storage directory: $e');
+      return null;
+    }
+  }
+
+  Future<void> _loadSavedApiKey() async {
+    if (_mockMode) {
+      _geminiApiKey = _mockKey;
+      return;
+    }
+    try {
+      final file = await _getConfigFile();
+      if (file != null && await file.exists()) {
+        final content = await file.readAsString();
+        if (content.trim().isNotEmpty) {
+          final data = jsonDecode(content) as Map<String, dynamic>;
+          final key = data['geminiApiKey'] as String?;
+          if (key != null && key.trim().isNotEmpty) {
+            _geminiApiKey = key.trim();
+            notifyListeners();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('AiCopilotService: Error loading saved API key: $e');
+    }
+  }
+
+  Future<void> setApiKey(String? key) async {
+    final cleanKey = key?.trim();
+    _geminiApiKey = (cleanKey != null && cleanKey.isNotEmpty) ? cleanKey : null;
     notifyListeners();
+
+    if (_mockMode) {
+      _mockKey = _geminiApiKey;
+      return;
+    }
+
+    try {
+      final file = await _getConfigFile();
+      if (file == null) return;
+      if (_geminiApiKey == null) {
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } else {
+        final data = jsonEncode({'geminiApiKey': _geminiApiKey});
+        await file.writeAsString(data, flush: true);
+      }
+    } catch (e) {
+      debugPrint('AiCopilotService: Error persisting API key: $e');
+    }
   }
 
   /// Generates a structured 3-bullet page summary
-  Future<String> summarize(String pageContent, {String? title}) async {
+  Future<String> summarize(String pageContent, {String? title, String? url}) async {
     if (pageContent.trim().isEmpty) {
       return 'No readable page content available to summarize.';
     }
 
     if (hasApiKey) {
       final prompt = '''
-You are Pi AI, the intelligent browser assistant. Analyze the following webpage content titled "$title".
+You are Pi AI, the intelligent browser assistant. Analyze the following webpage content titled "$title"${url != null && url.isNotEmpty ? ' at $url' : ''}.
 Provide:
 1. A 1-sentence executive overview.
 2. Exactly three high-impact bullet points capturing the core takeaways.
@@ -42,43 +127,64 @@ $pageContent
   }
 
   /// Answers contextual user questions about the active webpage
-  Future<String> askPage(String question, String pageContent) async {
+  Future<String> askPage(
+    String question,
+    String pageContent, {
+    String? title,
+    String? url,
+    String? selectedText,
+  }) async {
     if (question.trim().isEmpty) return 'Please enter a question.';
-    if (pageContent.trim().isEmpty) {
-      return 'No page content available to reference for this answer.';
+    if (pageContent.trim().isEmpty && (selectedText == null || selectedText.trim().isEmpty)) {
+      return 'No page content or selection available to reference for this answer.';
     }
 
     if (hasApiKey) {
-      final prompt = '''
-You are Pi AI, the intelligent browser assistant. The user is browsing a webpage with this content:
-"""
-$pageContent
-"""
-User Question: "$question"
+      final promptBuffer = StringBuffer();
+      promptBuffer.writeln('You are Pi AI, the intelligent browser assistant.');
+      if (title != null && title.isNotEmpty) {
+        promptBuffer.writeln('Webpage Title: "$title"');
+      }
+      if (url != null && url.isNotEmpty) {
+        promptBuffer.writeln('Webpage URL: $url');
+      }
+      if (selectedText != null && selectedText.trim().isNotEmpty) {
+        promptBuffer.writeln('Highlighted Text by User on Screen:\n"""\n${selectedText.trim()}\n"""');
+      }
+      promptBuffer.writeln('Webpage Content:\n"""\n$pageContent\n"""\n');
+      promptBuffer.writeln('User Question: "$question"');
+      promptBuffer.writeln('Answer accurately, concisely, and directly grounded in the page text and screen context.');
 
-Answer accurately, concisely, and directly grounded in the page text.
-''';
-      final response = await _callGemini(prompt);
+      final response = await _callGemini(promptBuffer.toString());
       if (response != null) return response;
     }
 
-    return _localQuestionAnswer(question, pageContent);
+    return _localQuestionAnswer(question, pageContent, selectedText: selectedText);
   }
 
   /// Explains complex concepts in simple terms
-  Future<String> explainSimply(String pageContent) async {
+  Future<String> explainSimply(
+    String pageContent, {
+    String? title,
+    String? url,
+    String? selectedText,
+  }) async {
     if (hasApiKey) {
-      final prompt = '''
-Explain the core concept of the following webpage content as if explaining to a beginner or 12-year-old. Use clear analogies and avoid unnecessary jargon.
+      final promptBuffer = StringBuffer();
+      promptBuffer.writeln('You are Pi AI. Explain the core concept of the following webpage content as if explaining to a beginner or 12-year-old. Use clear analogies and avoid unnecessary jargon.');
+      if (title != null && title.isNotEmpty) {
+        promptBuffer.writeln('Title: "$title"');
+      }
+      if (selectedText != null && selectedText.trim().isNotEmpty) {
+        promptBuffer.writeln('User specifically highlighted this part:\n"""\n${selectedText.trim()}\n"""');
+      }
+      promptBuffer.writeln('Content:\n$pageContent');
 
-Content:
-$pageContent
-''';
-      final response = await _callGemini(prompt);
+      final response = await _callGemini(promptBuffer.toString());
       if (response != null) return response;
     }
 
-    return _localExplainSimply(pageContent);
+    return _localExplainSimply(selectedText != null && selectedText.trim().isNotEmpty ? selectedText : pageContent);
   }
 
   // --- Gemini API Gateway using built-in dart:io ---
@@ -164,14 +270,18 @@ $pageContent
     return buffer.toString();
   }
 
-  String _localQuestionAnswer(String question, String content) {
+  String _localQuestionAnswer(String question, String content, {String? selectedText}) {
+    final effectiveContent = (selectedText != null && selectedText.trim().isNotEmpty)
+        ? '$selectedText\n$content'
+        : content;
+
     final qKeywords = question
         .toLowerCase()
         .split(RegExp(r'\W+'))
         .where((w) => w.length > 3)
         .toSet();
 
-    final sentences = content.split(RegExp(r'(?<=[.!?])\s+'));
+    final sentences = effectiveContent.split(RegExp(r'(?<=[.!?])\s+'));
     String? bestSentence;
     int maxMatches = 0;
 
@@ -185,7 +295,7 @@ $pageContent
     }
 
     if (bestSentence != null && maxMatches > 0) {
-      return '🔎 **Found relevant passage:**\n\n"$bestSentence"\n\n*(Add an API key for conversational AI answers).*';
+      return '🔎 **Found relevant passage:**\n\n"$bestSentence"\n\n*(Add an API key in settings for full conversational AI).*';
     }
 
     return 'I could not find a direct answer in this article for "$question". Try refining your keywords or connecting an API key in Pi AI settings.';

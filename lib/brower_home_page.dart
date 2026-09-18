@@ -130,10 +130,23 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
     if (currentTab == null) return;
 
     String content = '';
+    String pageTitle = currentTab.isNewTabPage ? 'Prime Start' : currentTab.title;
+    String pageUrl = currentTab.url;
+    String selectedText = '';
+
     if (!currentTab.isNewTabPage) {
       try {
         final article = await DevToolsService.extractArticleContent(currentTab.controller);
         content = article['content'] ?? '';
+        final extractedTitle = article['title'];
+        if (extractedTitle != null && extractedTitle.isNotEmpty && extractedTitle != 'Web Page' && extractedTitle != 'Article Reader') {
+          pageTitle = extractedTitle;
+        }
+        final extractedUrl = article['url'];
+        if (extractedUrl != null && extractedUrl.isNotEmpty) {
+          pageUrl = extractedUrl;
+        }
+        selectedText = article['selection'] ?? '';
       } catch (_) {}
     }
 
@@ -144,8 +157,10 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
       backgroundColor: Colors.transparent,
       builder: (_) => CopilotSheet(
         copilotService: _copilotService,
-        pageTitle: currentTab.isNewTabPage ? 'Prime Start' : currentTab.title,
+        pageTitle: pageTitle,
         pageContent: content,
+        pageUrl: pageUrl,
+        selectedText: selectedText,
       ),
     );
   }

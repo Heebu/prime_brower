@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class DevToolsService {
@@ -65,55 +66,126 @@ class DevToolsService {
     }
   }
 
-  /// Extracts clean article text and metadata for Reader Mode
+  /// Extracts clean article text, metadata, URL, and any selected text for Reader Mode and AI Copilot
   static Future<Map<String, String>> extractArticleContent(
     WebViewController controller,
   ) async {
     try {
       const extractionScript = '''
         (function() {
-          var title = document.title || '';
-          var h1 = document.querySelector('h1');
-          if (h1 && h1.innerText) title = h1.innerText.trim();
+          try {
+            var title = document.title || '';
+            var h1 = document.querySelector('h1');
+            if (h1 && h1.innerText && h1.innerText.trim().length > 0) {
+              title = h1.innerText.trim();
+            }
 
-          // Try to find article or main container
-          var articleElem = document.querySelector('article') || document.querySelector('main') || document.querySelector('[role="main"]') || document.body;
-          
-          // Clone to prevent modifying the live page
-          var clone = articleElem.cloneNode(true);
-          
-          // Remove scripts, styles, forms, iframes, ads
-          var toRemove = clone.querySelectorAll('script, style, nav, header, footer, noscript, iframe, aside, .ads, [class*="ad-"]');
-          for (var i = 0; i < toRemove.length; i++) {
-            toRemove[i].parentNode.removeChild(toRemove[i]);
+            var url = window.location.href || '';
+            var metaDesc = '';
+            var metaElem = document.querySelector('meta[name="description"]') || document.querySelector('meta[property="og:description"]');
+            if (metaElem && metaElem.getAttribute('content')) {
+              metaDesc = metaElem.getAttribute('content').trim();
+            }
+
+            // Selected text on screen (if user highlighted any text)
+            var selection = '';
+            if (window.getSelection) {
+              selection = window.getSelection().toString().trim();
+            }
+
+            // Try to find article or main container, falling back to body
+            var container = document.querySelector('article') || document.querySelector('main') || document.querySelector('[role="main"]') || document.body;
+            if (!container) {
+              container = document.body;
+            }
+
+            var clone = container.cloneNode(true);
+
+            // Remove clutter elements: scripts, styles, navigations, footers, headers, ads, cookies
+            var toRemove = clone.querySelectorAll('script, style, nav, header, footer, noscript, iframe, aside, svg, .ad, .ads, [class*="ad-"], [id*="ad-"], [class*="cookie"], [id*="cookie"]');
+            for (var i = 0; i < toRemove.length; i++) {
+              if (toRemove[i].parentNode) {
+                toRemove[i].parentNode.removeChild(toRemove[i]);
+              }
+            }
+
+            var text = clone.innerText || clone.textContent || '';
+            text = text.replace(/[\\r\\n\\t]+/g, '\\n').replace(/ {2,}/g, ' ').trim();
+
+            if (text.length > 15000) {
+              text = text.substring(0, 15000) + '... [truncated]';
+            }
+
+            return JSON.stringify({
+              title: title,
+              url: url,
+              metaDescription: metaDesc,
+              selection: selection,
+              content: text
+            });
+          } catch (err) {
+            return JSON.stringify({
+              title: document.title || 'Web Page',
+              url: window.location.href || '',
+              metaDescription: '',
+              selection: '',
+              content: (document.body && (document.body.innerText || document.body.textContent) || '').trim()
+            });
           }
-
-          var text = clone.innerText || clone.textContent || '';
-          return JSON.stringify({
-            title: title,
-            content: text.trim()
-          });
         })();
       ''';
 
       final result = await controller.runJavaScriptReturningResult(extractionScript);
-      var rawJson = result.toString();
-      if (rawJson.startsWith('"') && rawJson.endsWith('"')) {
-        rawJson = rawJson.substring(1, rawJson.length - 1)
-            .replaceAll(r'\"', '"')
-            .replaceAll(r'\n', '\n')
-            .replaceAll(r'\/', '/');
-      }
-
-      // Simple JSON parser fallback
-      return {
-        'title': 'Reader Mode',
-        'content': rawJson,
-      };
+      return parseExtractedJson(result.toString());
     } catch (e) {
       return {
         'title': 'Article Reader',
+        'url': '',
+        'metaDescription': '',
+        'selection': '',
         'content': 'Unable to extract article text from this page.',
+      };
+    }
+  }
+
+  /// Helper to safely parse raw extracted JSON string from webview
+  static Map<String, String> parseExtractedJson(String raw) {
+    var rawJson = raw.trim();
+    if (rawJson.startsWith('"') && rawJson.endsWith('"') && rawJson.length > 1) {
+      try {
+        rawJson = jsonDecode(rawJson) as String;
+      } catch (_) {
+        rawJson = rawJson.substring(1, rawJson.length - 1)
+            .replaceAll(r'\"', '"')
+            .replaceAll(r'\n', '\n')
+            .replaceAll(r'\r', '\r')
+            .replaceAll(r'\t', '\t')
+            .replaceAll(r'\/', '/');
+      }
+    }
+
+    try {
+      final decoded = jsonDecode(rawJson) as Map<String, dynamic>;
+      final title = (decoded['title'] as String?)?.trim();
+      final url = (decoded['url'] as String?)?.trim();
+      final metaDescription = (decoded['metaDescription'] as String?)?.trim();
+      final selection = (decoded['selection'] as String?)?.trim();
+      final content = (decoded['content'] as String?)?.trim();
+
+      return {
+        'title': (title != null && title.isNotEmpty) ? title : 'Web Page',
+        'url': url ?? '',
+        'metaDescription': metaDescription ?? '',
+        'selection': selection ?? '',
+        'content': content ?? '',
+      };
+    } catch (_) {
+      return {
+        'title': 'Web Page',
+        'url': '',
+        'metaDescription': '',
+        'selection': '',
+        'content': rawJson,
       };
     }
   }

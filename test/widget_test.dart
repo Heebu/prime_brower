@@ -17,6 +17,7 @@ import 'package:prime_brower/core/design_system/pull_to_refresh_wrapper.dart';
 import 'package:prime_brower/ui/widgets/browser_menu_sheet.dart';
 import 'package:prime_brower/ui/sync/cloud_sync_sheet.dart';
 import 'package:prime_brower/services/ai_copilot_service.dart';
+import 'package:prime_brower/services/devtools_service.dart';
 import 'package:prime_brower/services/firebase_auth_service.dart';
 import 'package:prime_brower/services/firebase_sync_service.dart';
 import 'package:prime_brower/services/theme_service.dart';
@@ -507,6 +508,74 @@ void main() {
     expect(summary.contains('Pi AI'), true);
     expect(summary.contains('Edge Copilot'), false);
     expect(summary.contains('Gemini'), false);
+  });
+
+  test('DevToolsService parseExtractedJson extracts structured page context, URL, and user selection', () {
+    const rawJson = '''{
+      "title": "Scholarship Opportunity 2026",
+      "url": "https://example.com/scholarship",
+      "metaDescription": "Full scholarship for students worldwide",
+      "selection": "Deadline is October 15, 2026",
+      "content": "Eligible applicants must submit their resume before October 15, 2026."
+    }''';
+
+    final result = DevToolsService.parseExtractedJson(rawJson);
+    expect(result['title'], 'Scholarship Opportunity 2026');
+    expect(result['url'], 'https://example.com/scholarship');
+    expect(result['metaDescription'], 'Full scholarship for students worldwide');
+    expect(result['selection'], 'Deadline is October 15, 2026');
+    expect(result['content'], contains('Eligible applicants'));
+
+    // Quoted JSON string from JavaScript result
+    final quotedResult = DevToolsService.parseExtractedJson('"$rawJson"');
+    expect(quotedResult['title'], 'Scholarship Opportunity 2026');
+
+    // Fallback for malformed string
+    final fallbackResult = DevToolsService.parseExtractedJson('Non-json page text');
+    expect(fallbackResult['title'], 'Web Page');
+    expect(fallbackResult['content'], 'Non-json page text');
+  });
+
+  test('AiCopilotService API key persistence and mock mode configuration test', () async {
+    final copilotService = AiCopilotService();
+    copilotService.enableMockMode();
+
+    expect(copilotService.hasApiKey, isFalse);
+    expect(copilotService.apiKey, isNull);
+
+    await copilotService.setApiKey('AIzaSyTestGeminiKey123456');
+    expect(copilotService.hasApiKey, isTrue);
+    expect(copilotService.apiKey, 'AIzaSyTestGeminiKey123456');
+
+    // Clear key
+    await copilotService.setApiKey(null);
+    expect(copilotService.hasApiKey, isFalse);
+    expect(copilotService.apiKey, isNull);
+  });
+
+  testWidgets('CopilotSheet renders highlighted selection context and selection prompt chip', (WidgetTester tester) async {
+    final copilotService = AiCopilotService();
+    copilotService.enableMockMode();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CopilotSheet(
+            copilotService: copilotService,
+            pageTitle: 'Scholarship Details',
+            pageContent: 'Full article text here',
+            selectedText: 'Tuition waiver and \$1,500 monthly stipend',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify selection greeting and chips
+    expect(find.textContaining('Tuition waiver and \$1,500 monthly stipend'), findsAtLeastNWidgets(1));
+    expect(find.text('🔍 Explain Selection'), findsOneWidget);
+    expect(find.text('📌 3-Bullet Summary'), findsOneWidget);
+    expect(find.text('💡 Explain Simply'), findsOneWidget);
   });
 
   testWidgets('Top toolbar actions and clean down panel test', (WidgetTester tester) async {

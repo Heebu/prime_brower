@@ -10,12 +10,16 @@ class CopilotSheet extends StatefulWidget {
   final AiCopilotService copilotService;
   final String pageTitle;
   final String pageContent;
+  final String? pageUrl;
+  final String? selectedText;
 
   const CopilotSheet({
     Key? key,
     required this.copilotService,
     required this.pageTitle,
     required this.pageContent,
+    this.pageUrl,
+    this.selectedText,
   }) : super(key: key);
 
   @override
@@ -33,12 +37,21 @@ class _CopilotSheetState extends State<CopilotSheet> {
   void initState() {
     super.initState();
     // Context-aware welcome message from Pi AI
+    final hasSelection = widget.selectedText != null && widget.selectedText!.trim().isNotEmpty;
     final hasContent = widget.pageContent.trim().isNotEmpty;
+
+    String initialGreeting;
+    if (hasSelection) {
+      initialGreeting = 'Hi! I\'m your **Pi AI**. I noticed you highlighted:\n\n> "${widget.selectedText!.trim()}"\n\nHow can I help you understand this selection or this page?';
+    } else if (hasContent) {
+      initialGreeting = 'Hi! I\'m your **Pi AI**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?';
+    } else {
+      initialGreeting = 'Hi! I\'m your **Pi AI**. Ask me any question, or navigate to a web page and I can summarize or explain it for you!';
+    }
+
     _messages.add({
       'role': 'assistant',
-      'text': hasContent
-          ? 'Hi! I\'m your **Pi AI**. I\'ve read "${widget.pageTitle}". How can I help you understand this page?'
-          : 'Hi! I\'m your **Pi AI**. Ask me any question, or navigate to a web page and I can summarize or explain it for you!',
+      'text': initialGreeting,
     });
   }
 
@@ -74,11 +87,26 @@ class _CopilotSheetState extends State<CopilotSheet> {
 
     String answer;
     if (text.toLowerCase().contains('summar')) {
-      answer = await widget.copilotService.summarize(widget.pageContent, title: widget.pageTitle);
+      answer = await widget.copilotService.summarize(
+        widget.pageContent,
+        title: widget.pageTitle,
+        url: widget.pageUrl,
+      );
     } else if (text.toLowerCase().contains('explain')) {
-      answer = await widget.copilotService.explainSimply(widget.pageContent);
+      answer = await widget.copilotService.explainSimply(
+        widget.pageContent,
+        title: widget.pageTitle,
+        url: widget.pageUrl,
+        selectedText: widget.selectedText,
+      );
     } else {
-      answer = await widget.copilotService.askPage(text, widget.pageContent);
+      answer = await widget.copilotService.askPage(
+        text,
+        widget.pageContent,
+        title: widget.pageTitle,
+        url: widget.pageUrl,
+        selectedText: widget.selectedText,
+      );
     }
 
     if (!mounted) return;
@@ -91,6 +119,8 @@ class _CopilotSheetState extends State<CopilotSheet> {
 
   void _openSettingsDialog() {
     final controller = TextEditingController(text: widget.copilotService.apiKey ?? '');
+    final hasKey = widget.copilotService.hasApiKey;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -105,8 +135,31 @@ class _CopilotSheetState extends State<CopilotSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: hasKey ? const Color(0xFF10B981).withOpacity(0.12) : Colors.grey.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(hasKey ? Icons.check_circle : Icons.info_outline, size: 14, color: hasKey ? const Color(0xFF10B981) : Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    hasKey ? 'Gemini 1.5 Flash Active' : 'Smart Local Engine Active',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: hasKey ? const Color(0xFF10B981) : Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
             const Text(
-              'Add your AI API key to enable high-intelligence generative synthesis. If omitted, Prime Browser uses its smart local extractive AI engine.',
+              'Add your Google AI Studio Gemini API key to enable generative synthesis and deep understanding. The key is securely saved on your device.',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
@@ -114,7 +167,7 @@ class _CopilotSheetState extends State<CopilotSheet> {
               controller: controller,
               obscureText: true,
               decoration: const InputDecoration(
-                hintText: 'Enter AI Studio API Key',
+                hintText: 'Paste Gemini API Key',
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
@@ -123,15 +176,17 @@ class _CopilotSheetState extends State<CopilotSheet> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              widget.copilotService.setApiKey(null);
+            onPressed: () async {
+              await widget.copilotService.setApiKey(null);
+              if (mounted) setState(() {});
               Navigator.pop(ctx);
             },
             child: const Text('Clear Key'),
           ),
           ElevatedButton(
-            onPressed: () {
-              widget.copilotService.setApiKey(controller.text);
+            onPressed: () async {
+              await widget.copilotService.setApiKey(controller.text);
+              if (mounted) setState(() {});
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
@@ -214,9 +269,16 @@ class _CopilotSheetState extends State<CopilotSheet> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
+                  if (widget.selectedText != null && widget.selectedText!.trim().isNotEmpty)
+                    _buildPromptChip(
+                      '🔍 Explain Selection',
+                      'Explain what this selected passage means: "${widget.selectedText!.trim()}"',
+                    ),
                   _buildPromptChip('📌 3-Bullet Summary', 'Summarize this page in 3 bullets'),
                   _buildPromptChip('💡 Explain Simply', 'Explain the content of this page simply'),
                   _buildPromptChip('❓ Key Takeaways', 'What are the main takeaways from this article?'),
+                  _buildPromptChip('📅 Deadlines & Dates', 'What are the key dates, deadlines, or timelines mentioned on this page?'),
+                  _buildPromptChip('🎯 Requirements', 'What are the requirements or eligibility criteria mentioned?'),
                 ],
               ),
             ),
