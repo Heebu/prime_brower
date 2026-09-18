@@ -542,15 +542,58 @@ void main() {
 
     expect(copilotService.hasApiKey, isFalse);
     expect(copilotService.apiKey, isNull);
+    expect(copilotService.isUsingPersonalKey, isFalse);
+    expect(copilotService.isUsingRemoteKey, isFalse);
 
-    await copilotService.setApiKey('AIzaSyTestGeminiKey123456');
+    // Simulate remote cloud key fetched from Firestore
+    copilotService.setRemoteApiKey('AIzaSyRemoteCloudDefaultKey');
     expect(copilotService.hasApiKey, isTrue);
-    expect(copilotService.apiKey, 'AIzaSyTestGeminiKey123456');
+    expect(copilotService.effectiveApiKey, 'AIzaSyRemoteCloudDefaultKey');
+    expect(copilotService.isUsingPersonalKey, isFalse);
+    expect(copilotService.isUsingRemoteKey, isTrue);
 
-    // Clear key
+    // Personal user key takes priority over remote key
+    await copilotService.setApiKey('AIzaSyUserPersonalKey');
+    expect(copilotService.hasApiKey, isTrue);
+    expect(copilotService.effectiveApiKey, 'AIzaSyUserPersonalKey');
+    expect(copilotService.isUsingPersonalKey, isTrue);
+    expect(copilotService.isUsingRemoteKey, isFalse);
+
+    // Clear personal key reverts back to remote key
     await copilotService.setApiKey(null);
+    expect(copilotService.hasApiKey, isTrue);
+    expect(copilotService.effectiveApiKey, 'AIzaSyRemoteCloudDefaultKey');
+    expect(copilotService.isUsingPersonalKey, isFalse);
+    expect(copilotService.isUsingRemoteKey, isTrue);
+
+    // Clear remote key reverts to local offline mode
+    copilotService.setRemoteApiKey(null);
     expect(copilotService.hasApiKey, isFalse);
-    expect(copilotService.apiKey, isNull);
+    expect(copilotService.effectiveApiKey, isNull);
+    expect(copilotService.isUsingPersonalKey, isFalse);
+    expect(copilotService.isUsingRemoteKey, isFalse);
+  });
+
+  test('AiCopilotService multi-turn chat handles conversational history and offline fallback', () async {
+    final copilotService = AiCopilotService();
+    copilotService.enableMockMode();
+
+    const pageContent = 'Dart is an approachable, portable, and productive language for high-quality apps on any platform. Flutter uses Dart.';
+    final history = [
+      {'role': 'assistant', 'text': 'Hi! I am Pi AI.'},
+      {'role': 'user', 'text': 'What language does Flutter use?'},
+      {'role': 'assistant', 'text': 'Flutter uses Dart.'},
+      {'role': 'user', 'text': 'Can you summarize this page?'},
+    ];
+
+    final response = await copilotService.chat(
+      messages: history,
+      pageContent: pageContent,
+      title: 'Dart Language Overview',
+    );
+
+    expect(response, isNotEmpty);
+    expect(response.contains('Overview') || response.contains('Summary') || response.contains('Flutter'), isTrue);
   });
 
   testWidgets('CopilotSheet renders highlighted selection context and selection prompt chip', (WidgetTester tester) async {
@@ -576,6 +619,52 @@ void main() {
     expect(find.text('🔍 Explain Selection'), findsOneWidget);
     expect(find.text('📌 3-Bullet Summary'), findsOneWidget);
     expect(find.text('💡 Explain Simply'), findsOneWidget);
+  });
+
+  testWidgets('CopilotSheet multi-turn messaging and settings badge test', (WidgetTester tester) async {
+    final copilotService = AiCopilotService();
+    copilotService.enableMockMode();
+    copilotService.setRemoteApiKey('AIzaSyRemoteCloudKey');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CopilotSheet(
+            copilotService: copilotService,
+            pageTitle: 'Dart Tour',
+            pageContent: 'Dart is designed for client development, prioritizing fast apps on multiple devices.',
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // Verify initial greeting
+    expect(find.textContaining('Dart Tour'), findsOneWidget);
+
+    // Send a message
+    await tester.enterText(find.byType(TextField), 'Tell me about Dart');
+    await tester.tap(find.byIcon(Icons.arrow_upward));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // Message should be displayed in conversation list
+    expect(find.text('Tell me about Dart'), findsOneWidget);
+
+    // Open settings dialog
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    // Verify remote key active badge
+    expect(find.text('Prime Cloud AI Active'), findsOneWidget);
+
+    // Enter personal key and save
+    await tester.enterText(find.byType(TextField).last, 'MyPersonalKey123');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(copilotService.isUsingPersonalKey, isTrue);
+    expect(copilotService.effectiveApiKey, 'MyPersonalKey123');
   });
 
   testWidgets('Top toolbar actions and clean down panel test', (WidgetTester tester) async {

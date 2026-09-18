@@ -85,29 +85,13 @@ class _CopilotSheetState extends State<CopilotSheet> {
     });
     _scrollToBottom();
 
-    String answer;
-    if (text.toLowerCase().contains('summar')) {
-      answer = await widget.copilotService.summarize(
-        widget.pageContent,
-        title: widget.pageTitle,
-        url: widget.pageUrl,
-      );
-    } else if (text.toLowerCase().contains('explain')) {
-      answer = await widget.copilotService.explainSimply(
-        widget.pageContent,
-        title: widget.pageTitle,
-        url: widget.pageUrl,
-        selectedText: widget.selectedText,
-      );
-    } else {
-      answer = await widget.copilotService.askPage(
-        text,
-        widget.pageContent,
-        title: widget.pageTitle,
-        url: widget.pageUrl,
-        selectedText: widget.selectedText,
-      );
-    }
+    final answer = await widget.copilotService.chat(
+      messages: _messages,
+      pageContent: widget.pageContent,
+      title: widget.pageTitle,
+      url: widget.pageUrl,
+      selectedText: widget.selectedText,
+    );
 
     if (!mounted) return;
     setState(() {
@@ -119,7 +103,18 @@ class _CopilotSheetState extends State<CopilotSheet> {
 
   void _openSettingsDialog() {
     final controller = TextEditingController(text: widget.copilotService.apiKey ?? '');
-    final hasKey = widget.copilotService.hasApiKey;
+    final isPersonal = widget.copilotService.isUsingPersonalKey;
+    final isRemote = widget.copilotService.isUsingRemoteKey;
+
+    final Color badgeColor = isPersonal
+        ? const Color(0xFF10B981)
+        : (isRemote ? const Color(0xFF0284C7) : Colors.grey);
+    final String badgeText = isPersonal
+        ? 'Personal Gemini Key Active'
+        : (isRemote ? 'Prime Cloud AI Active' : 'Smart Local Engine Active');
+    final IconData badgeIcon = (isPersonal || isRemote)
+        ? Icons.check_circle
+        : Icons.info_outline;
 
     showDialog(
       context: context,
@@ -138,37 +133,41 @@ class _CopilotSheetState extends State<CopilotSheet> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: hasKey ? const Color(0xFF10B981).withOpacity(0.12) : Colors.grey.withOpacity(0.12),
+                color: badgeColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(hasKey ? Icons.check_circle : Icons.info_outline, size: 14, color: hasKey ? const Color(0xFF10B981) : Colors.grey),
+                  Icon(badgeIcon, size: 14, color: badgeColor),
                   const SizedBox(width: 6),
                   Text(
-                    hasKey ? 'Gemini 1.5 Flash Active' : 'Smart Local Engine Active',
+                    badgeText,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: hasKey ? const Color(0xFF10B981) : Colors.grey[700],
+                      color: badgeColor,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Add your Google AI Studio Gemini API key to enable generative synthesis and deep understanding. The key is securely saved on your device.',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            Text(
+              isPersonal
+                  ? 'Your personal Gemini API key is saved on this device and takes precedence over default settings.'
+                  : (isRemote
+                      ? 'Connected to Prime Browser\'s shared Cloud AI backend. Add your own key below if you wish to override it.'
+                      : 'Add your Google AI Studio Gemini API key to enable generative synthesis and deep multi-turn understanding.'),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               obscureText: true,
-              decoration: const InputDecoration(
-                hintText: 'Paste Gemini API Key',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: isPersonal ? 'Personal Key Set' : 'Paste Personal Gemini API Key',
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),

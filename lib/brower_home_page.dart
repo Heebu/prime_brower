@@ -67,6 +67,7 @@ class _BrowserHomePageState extends State<BrowserHomePage> with WidgetsBindingOb
       },
     );
     _copilotService = AiCopilotService();
+    _copilotService.fetchRemoteApiKey();
 
     final tab = _browserManager.currentTab;
     final isNewTab = tab == null || tab.url == 'prime://newtab';

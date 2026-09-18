@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 typedef PiAiService = AiCopilotService;
 
@@ -11,10 +13,16 @@ class AiCopilotService with ChangeNotifier {
   bool _mockMode = false;
   String? _mockKey;
   String? _geminiApiKey;
+  String? _remoteApiKey;
 
   String? get apiKey => _geminiApiKey;
-  String? get geminiApiKey => _geminiApiKey;
-  bool get hasApiKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+  String? get personalApiKey => _geminiApiKey;
+  String? get remoteApiKey => _remoteApiKey;
+  String? get effectiveApiKey => (_geminiApiKey != null && _geminiApiKey!.isNotEmpty) ? _geminiApiKey : _remoteApiKey;
+  String? get geminiApiKey => effectiveApiKey;
+  bool get hasApiKey => effectiveApiKey != null && effectiveApiKey!.isNotEmpty;
+  bool get isUsingPersonalKey => _geminiApiKey != null && _geminiApiKey!.isNotEmpty;
+  bool get isUsingRemoteKey => !isUsingPersonalKey && _remoteApiKey != null && _remoteApiKey!.isNotEmpty;
   bool get isMockMode => _mockMode;
 
   bool get _isTestEnv {
@@ -37,6 +45,42 @@ class AiCopilotService with ChangeNotifier {
     _mockMode = true;
     _mockKey = initialKey;
     _geminiApiKey = initialKey;
+    _remoteApiKey = null;
+  }
+
+  @visibleForTesting
+  void setRemoteApiKey(String? key) {
+    final cleanKey = key?.trim();
+    _remoteApiKey = (cleanKey != null && cleanKey.isNotEmpty) ? cleanKey : null;
+    notifyListeners();
+  }
+
+  /// Automatically retrieves shared project API key from Firestore (/app_config/ai)
+  Future<void> fetchRemoteApiKey({FirebaseFirestore? firestore}) async {
+    if (_mockMode && firestore == null) return;
+    try {
+      FirebaseFirestore? db = firestore;
+      if (db == null) {
+        try {
+          if (Firebase.apps.isNotEmpty) {
+            db = FirebaseFirestore.instance;
+          }
+        } catch (_) {}
+      }
+      if (db == null) return;
+
+      final doc = await db.collection('app_config').doc('ai').get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final key = (data['geminiApiKey'] as String?) ?? (data['apiKey'] as String?);
+        if (key != null && key.trim().isNotEmpty) {
+          _remoteApiKey = key.trim();
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('AiCopilotService: Error fetching remote AI config: $e');
+    }
   }
 
   Future<File?> _getConfigFile() async {
@@ -187,12 +231,57 @@ $pageContent
     return _localExplainSimply(selectedText != null && selectedText.trim().isNotEmpty ? selectedText : pageContent);
   }
 
+  /// Performs a multi-turn conversation preserving full context of past messages and on-screen page text
+  Future<String> chat({
+    required List<Map<String, String>> messages,
+    required String pageContent,
+    String? title,
+    String? url,
+    String? selectedText,
+  }) async {
+    if (messages.isEmpty) {
+      return 'How can I assist you with this page?';
+    }
+
+    if (hasApiKey) {
+      final response = await _callGeminiChat(
+        messages: messages,
+        pageContent: pageContent,
+        title: title,
+        url: url,
+        selectedText: selectedText,
+      );
+      if (response != null && response.trim().isNotEmpty) {
+        return response;
+      }
+    }
+
+    // Fallback: Smart Local Extractive Engine
+    final lastUserMessage = messages.reversed.firstWhere(
+      (m) => m['role'] == 'user',
+      orElse: () => {'text': ''},
+    );
+    final query = lastUserMessage['text'] ?? '';
+    if (query.toLowerCase().contains('summar')) {
+      return _localSummarize(pageContent, title: title);
+    } else if (query.toLowerCase().contains('explain')) {
+      return _localExplainSimply(
+        selectedText != null && selectedText.trim().isNotEmpty ? selectedText : pageContent,
+      );
+    } else {
+      return _localQuestionAnswer(query, pageContent, selectedText: selectedText);
+    }
+  }
+
   // --- Gemini API Gateway using built-in dart:io ---
   Future<String?> _callGemini(String prompt) async {
+    final key = effectiveApiKey;
+    if (key == null || key.isEmpty) return null;
+
     HttpClient? client;
     try {
       final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_geminiApiKey',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$key',
       );
 
       final payload = jsonEncode({
@@ -211,6 +300,110 @@ $pageContent
 
       client = HttpClient();
       final request = await client.postUrl(url);
+      request.headers.contentType = ContentType.json;
+      request.write(payload);
+
+      final response = await request.close();
+      if (response.statusCode == 200) {
+        final responseBody = await response.transform(utf8.decoder).join();
+        final data = jsonDecode(responseBody);
+        final text = data['candidates']?[0]?['content']?['parts']?[0]?['text'];
+        if (text != null) return text.toString().trim();
+      }
+    } catch (_) {
+    } finally {
+      client?.close();
+    }
+    return null;
+  }
+
+  Future<String?> _callGeminiChat({
+    required List<Map<String, String>> messages,
+    required String pageContent,
+    String? title,
+    String? url,
+    String? selectedText,
+  }) async {
+    final key = effectiveApiKey;
+    if (key == null || key.isEmpty) return null;
+
+    HttpClient? client;
+    try {
+      final uri = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$key',
+      );
+
+      final systemPromptBuffer = StringBuffer();
+      systemPromptBuffer.writeln('You are Pi AI, the intelligent and insightful browser copilot for Prime Browser.');
+      systemPromptBuffer.writeln('You assist users while they browse the web.');
+      if (title != null && title.isNotEmpty) {
+        systemPromptBuffer.writeln('Active Webpage Title: "$title"');
+      }
+      if (url != null && url.isNotEmpty) {
+        systemPromptBuffer.writeln('Active Webpage URL: $url');
+      }
+      if (selectedText != null && selectedText.trim().isNotEmpty) {
+        systemPromptBuffer.writeln('User specifically highlighted this text on screen:\n"""\n${selectedText.trim()}\n"""');
+      }
+      if (pageContent.trim().isNotEmpty) {
+        // Limit page content in system prompt to prevent token limit overflows
+        final trimmedContent = pageContent.length > 25000 ? '${pageContent.substring(0, 25000)}... [truncated]' : pageContent;
+        systemPromptBuffer.writeln('Active Webpage Content:\n"""\n$trimmedContent\n"""');
+      }
+      systemPromptBuffer.writeln(
+        '\nGuidelines:\n'
+        '1. Answer accurately, concisely, and directly grounded in the active page and on-screen context.\n'
+        '2. Remember all previous turns in this conversation and provide seamless follow-up answers.\n'
+        '3. If asked about something not mentioned in the page, provide an answer from general knowledge while politely noting that it is not covered on this page.\n'
+        '4. Format answers using markdown: bold highlights, bullet points, and clean brief paragraphs.',
+      );
+
+      // Build alternating contents array (Gemini requires starting with 'user' and alternating roles)
+      final contents = <Map<String, dynamic>>[];
+      String? lastRole;
+
+      for (final msg in messages) {
+        final rawRole = msg['role'] ?? 'user';
+        final role = (rawRole == 'model' || rawRole == 'assistant') ? 'model' : 'user';
+        final text = (msg['text'] ?? '').trim();
+        if (text.isEmpty) continue;
+
+        // Gemini contents must start with 'user'
+        if (contents.isEmpty && role != 'user') {
+          continue;
+        }
+
+        if (role == lastRole) {
+          final lastParts = contents.last['parts'] as List<dynamic>;
+          lastParts.add({'text': text});
+        } else {
+          contents.add({
+            'role': role,
+            'parts': [
+              {'text': text}
+            ],
+          });
+          lastRole = role;
+        }
+      }
+
+      if (contents.isEmpty) return null;
+
+      final payload = jsonEncode({
+        'system_instruction': {
+          'parts': [
+            {'text': systemPromptBuffer.toString()}
+          ]
+        },
+        'contents': contents,
+        'generationConfig': {
+          'temperature': 0.5,
+          'maxOutputTokens': 1000,
+        }
+      });
+
+      client = HttpClient();
+      final request = await client.postUrl(uri);
       request.headers.contentType = ContentType.json;
       request.write(payload);
 

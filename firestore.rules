@@ -40,6 +40,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // App configuration: Anyone can read app settings (e.g., default AI config); allows admin seeding
+    match /app_config/{configId} {
+      allow read, write: if true;
+    }
+
     // Users: Users can read and write their own profile and sync data
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
