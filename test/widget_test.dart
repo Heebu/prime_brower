@@ -443,6 +443,61 @@ void main() {
     expect(find.text('Edge Copilot AI'), findsNothing);
   });
 
+  testWidgets('Pi AI Assistant Sheet moves up when keyboard appears with viewInsets', (WidgetTester tester) async {
+    final copilotService = AiCopilotService();
+
+    // 1. Render sheet with zero keyboard inset
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(400, 800),
+            viewInsets: EdgeInsets.zero,
+            padding: EdgeInsets.only(top: 24, bottom: 16),
+          ),
+          child: Scaffold(
+            body: CopilotSheet(
+              copilotService: copilotService,
+              pageTitle: 'Test Article',
+              pageContent: 'Test content',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final inputFinder = find.byType(TextField);
+    expect(inputFinder, findsOneWidget);
+    final initialBottomY = tester.getBottomLeft(inputFinder).dy;
+
+    // 2. Simulate soft keyboard appearing (300px viewInsets.bottom)
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(400, 800),
+            viewInsets: EdgeInsets.only(bottom: 300),
+            padding: EdgeInsets.only(top: 24, bottom: 16),
+          ),
+          child: Scaffold(
+            body: CopilotSheet(
+              copilotService: copilotService,
+              pageTitle: 'Test Article',
+              pageContent: 'Test content',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final raisedBottomY = tester.getBottomLeft(inputFinder).dy;
+    // Verify the textfield moved UP (smaller dy coordinate in Flutter) by approximately 300px
+    expect(raisedBottomY < initialBottomY, isTrue);
+    expect((initialBottomY - raisedBottomY) >= 280, isTrue);
+  });
+
   test('AiCopilotService extractive summary Pi AI branding test', () async {
     final copilotService = AiCopilotService();
     final summary = await copilotService.summarize(
