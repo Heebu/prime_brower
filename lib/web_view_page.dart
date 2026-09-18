@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'models/web_tab.dart';
@@ -59,7 +61,14 @@ class WebViewPage extends StatelessWidget {
       },
       child: Stack(
         children: [
-          WebViewWidget(controller: tab.controller),
+          WebViewWidget(
+            controller: tab.controller,
+            gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
+              Factory<OneSequenceGestureRecognizer>(
+                EagerGestureRecognizer.new,
+              ),
+            },
+          ),
           if (tab.isLoading && tab.progress < 100)
             Positioned(
               top: 0,

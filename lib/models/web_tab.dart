@@ -38,6 +38,18 @@ class WebTab {
   double currentScrollY = 0.0;
   bool get isAtTop => currentScrollY <= 5.0;
 
+  /// Retrieves current scroll offset from the WebView controller
+  Future<Offset> getScrollOffset() async {
+    try {
+      if (_controller != null) {
+        final pos = await _controller!.getScrollPosition();
+        currentScrollY = pos.dy;
+        return pos;
+      }
+    } catch (_) {}
+    return Offset(0, currentScrollY);
+  }
+
   WebTab({
     required this.id,
     required this.url,

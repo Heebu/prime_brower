@@ -55,8 +55,10 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
     _pointerStartX = event.position.dx;
     _dragOffset = 0.0;
 
-    final atTop = widget.canRefresh?.call() ?? _isScrollAtTop;
-    _isEligible = atTop || (event.localPosition.dy < 90);
+    final atTop = widget.canRefresh != null
+        ? widget.canRefresh!()
+        : (_isScrollAtTop || event.localPosition.dy < 90);
+    _isEligible = atTop;
   }
 
   void _onPointerMove(PointerMoveEvent event) {
@@ -95,7 +97,9 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     if (_isRefreshing) return;
-    final atTop = widget.canRefresh?.call() ?? _isScrollAtTop;
+    final atTop = widget.canRefresh != null
+        ? widget.canRefresh!()
+        : _isScrollAtTop;
     if (!atTop && _dragOffset == 0.0) return;
 
     if ((details.primaryDelta != null && details.primaryDelta! > 0) || _dragOffset > 0) {
@@ -185,8 +189,12 @@ class _PullToRefreshWrapperState extends State<PullToRefreshWrapper> with Single
             onPointerCancel: _onPointerCancel,
             child: GestureDetector(
               behavior: HitTestBehavior.translucent,
-              onVerticalDragUpdate: _onVerticalDragUpdate,
-              onVerticalDragEnd: _onVerticalDragEnd,
+              onVerticalDragUpdate: (widget.canRefresh == null || widget.canRefresh!())
+                  ? _onVerticalDragUpdate
+                  : null,
+              onVerticalDragEnd: (widget.canRefresh == null || widget.canRefresh!())
+                  ? _onVerticalDragEnd
+                  : null,
               child: widget.child,
             ),
           ),

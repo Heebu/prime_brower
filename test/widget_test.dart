@@ -37,6 +37,7 @@ import 'package:prime_brower/models/feed_item.dart';
 import 'package:prime_brower/models/search_suggestion.dart';
 import 'package:prime_brower/services/app_link_service.dart';
 import 'package:prime_brower/services/session_persistence_service.dart';
+import 'package:prime_brower/models/web_tab.dart';
 
 void main() {
   testWidgets('BrowserApp smoke test with New Tab Start Dashboard', (WidgetTester tester) async {
@@ -1373,6 +1374,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(refreshed, false);
+  });
+
+  test('WebTab scroll tracking and isAtTop behavior test', () async {
+    final tab = WebTab(id: 'tab_test_scroll', url: 'https://example.com');
+    expect(tab.isAtTop, true);
+    expect(tab.currentScrollY, 0.0);
+
+    // Simulate page scrolling down
+    tab.currentScrollY = 150.0;
+    expect(tab.isAtTop, false);
+
+    // Scroll back to top
+    tab.currentScrollY = 2.0;
+    expect(tab.isAtTop, true);
+
+    // Query scroll offset returns current offset
+    final offset = await tab.getScrollOffset();
+    expect(offset.dy, 2.0);
   });
 
   testWidgets('Swipe down from top of app bar moves to all tabs', (WidgetTester tester) async {
